@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Takeoff AI — Multi-Discipline Quantity Takeoff</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'dark-bg': '#0a0b0f',
+                        'dark-card': '#13141a',
+                        'dark-border': '#1e1f28',
+                        'dark-hover': '#1a1b24',
+                        'brand': '#3b82f6',
+                        'brand-dim': '#1e3a5f',
+                        'success': '#22c55e',
+                        'warning': '#eab308',
+                        'danger': '#ef4444',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+        body { background: #0a0b0f; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0a0b0f; }
+        ::-webkit-scrollbar-thumb { background: #2a2b35; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3a3b45; }
+        .drop-zone { transition: all 0.2s; }
+        .drop-zone.dragover { border-color: #3b82f6; background: #0d1117; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .spinner { border: 2px solid #1e1f28; border-top: 2px solid #3b82f6; border-radius: 50%; width: 20px; height: 20px; animation: spin 0.8s linear infinite; display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .mono { font-family: 'JetBrains Mono', 'SF Mono', 'Courier New', monospace; }
+        .conf-high { background: rgba(34,197,94,0.15); color: #22c55e; }
+        .conf-medium { background: rgba(234,179,8,0.15); color: #eab308; }
+        .conf-low { background: rgba(239,68,68,0.15); color: #ef4444; }
+    </style>
+</head>
+<body class="text-gray-200 min-h-screen">
+
+<!-- Header -->
+<header class="border-b border-dark-border bg-dark-bg/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-brand flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-lg font-semibold text-white">Takeoff AI</h1>
+                <p class="text-xs text-gray-500">Multi-Discipline Quantity Takeoff</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4 text-sm text-gray-400">
+            <a href="https://github.com/mrshranikjain/universal-takeoff-tool" target="_blank" class="hover:text-white transition-colors flex items-center gap-2">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.81 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                GitHub
+            </a>
+        </div>
+    </div>
+</header>
+
+<!-- Main Content -->
+<main class="max-w-7xl mx-auto px-6 py-8">
+
+    <!-- Upload Section (shown when no job) -->
+    <div id="upload-section" class="fade-in">
+        <div class="text-center mb-12 mt-8">
+            <h2 class="text-3xl font-bold text-white mb-3">Drop in the drawing set.</h2>
+            <p class="text-gray-500 text-lg">Any discipline — HVAC, plumbing, electrical, structural, P&ID, fire protection. The engine reads it the way your best estimator would.</p>
+        </div>
+
+        <!-- Waterfall steps -->
+        <div class="grid grid-cols-4 gap-4 mb-12 max-w-4xl mx-auto">
+            <div class="bg-dark-card border border-dark-border rounded-xl p-4 text-center">
+                <div class="text-brand text-xs font-semibold mb-2 mono">LAYER 2</div>
+                <div class="text-sm text-gray-300 font-medium">Text Extraction</div>
+                <div class="text-xs text-gray-600 mt-1">Tags & annotations</div>
+                <div class="text-xs text-success mt-1">High confidence</div>
+            </div>
+            <div class="bg-dark-card border border-dark-border rounded-xl p-4 text-center">
+                <div class="text-brand text-xs font-semibold mb-2 mono">LAYER 3</div>
+                <div class="text-sm text-gray-300 font-medium">Vector Analysis</div>
+                <div class="text-xs text-gray-600 mt-1">CAD color layers</div>
+                <div class="text-xs text-warning mt-1">Medium confidence</div>
+            </div>
+            <div class="bg-dark-card border border-dark-border rounded-xl p-4 text-center">
+                <div class="text-brand text-xs font-semibold mb-2 mono">LAYER 4</div>
+                <div class="text-sm text-gray-300 font-medium">VL Detection</div>
+                <div class="text-xs text-gray-600 mt-1">Unlabeled symbols</div>
+                <div class="text-xs text-danger mt-1">Low confidence</div>
+            </div>
+            <div class="bg-dark-card border border-dark-border rounded-xl p-4 text-center">
+                <div class="text-brand text-xs font-semibold mb-2 mono">LAYER 5</div>
+                <div class="text-sm text-gray-300 font-medium">Parametric Rules</div>
+                <div class="text-xs text-gray-600 mt-1">Standard sizes</div>
+                <div class="text-xs text-gray-500 mt-1">Inference</div>
+            </div>
+        </div>
+
+        <!-- Drop zone -->
+        <div id="dropzone" class="drop-zone border-2 border-dashed border-dark-border rounded-2xl p-12 text-center cursor-pointer max-w-2xl mx-auto hover:border-brand/50 transition-all" onclick="document.getElementById('file-input').click()">
+            <div class="mb-4">
+                <svg class="w-12 h-12 text-gray-600 mx-auto" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                </svg>
+            </div>
+            <p class="text-gray-300 text-lg font-medium mb-2">Drop PDF drawing here</p>
+            <p class="text-gray-600 text-sm">or click to browse · PDF only · Multi-page supported</p>
+            <input type="file" id="file-input" accept=".pdf" class="hidden" onchange="handleFileSelect(event)" />
+        </div>
+
+        <!-- Options -->
+        <div id="options-section" class="max-w-2xl mx-auto mt-6 hidden">
+            <div class="bg-dark-card border border-dark-border rounded-xl p-6 space-y-4">
+                <div class="flex items-center gap-2 mb-2">
+                    <svg class="w-4 h-4 text-brand" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span class="text-sm font-medium text-gray-300">Analysis Options</span>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Discipline</label>
+                    <select id="discipline-select" class="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-sm text-gray-200 focus:border-brand focus:outline-none">
+                        <option value="auto">Auto-detect (recommended)</option>
+                        <option value="hvac">HVAC</option>
+                        <option value="plumbing">Plumbing</option>
+                        <option value="electrical">Electrical</option>
+                        <option value="fire_protection">Fire Protection</option>
+                        <option value="structural">Structural</option>
+                        <option value="civil">Civil / Architectural</option>
+                        <option value="pid">P&ID</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Scale Reference Room (optional)</label>
+                        <input id="scale-room" type="text" placeholder="e.g., AHU ROOM - 04" class="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-sm text-gray-200 focus:border-brand focus:outline-none" />
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Scale Reference Dimension (optional)</label>
+                        <input id="scale-dim" type="text" placeholder="e.g., 4950X7450" class="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-sm text-gray-200 focus:border-brand focus:outline-none" />
+                    </div>
+                </div>
+
+                <label class="flex items-center gap-2 text-sm text-gray-400 cursor-pointer">
+                    <input type="checkbox" id="vl-verify" class="rounded bg-dark-bg border-dark-border text-brand focus:ring-brand" />
+                    Enable VL model verification (slower, detects unlabeled symbols)
+                </label>
+
+                <button id="analyze-btn" onclick="startAnalysis()" class="w-full bg-brand hover:bg-blue-600 text-white font-medium py-3 rounded-lg transition-colors flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    Start Takeoff
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Processing Section -->
+    <div id="processing-section" class="hidden fade-in max-w-2xl mx-auto">
+        <div class="bg-dark-card border border-dark-border rounded-2xl p-12 text-center">
+            <div class="spinner mx-auto mb-6" style="width:40px;height:40px;border-width:3px;"></div>
+            <h2 class="text-xl font-semibold text-white mb-2">Analyzing drawing...</h2>
+            <p id="processing-status" class="text-gray-500 text-sm mb-4">Uploading file</p>
+            <div class="flex items-center justify-center gap-2 text-xs text-gray-600">
+                <span class="mono" id="processing-filename"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div id="results-section" class="hidden fade-in">
+        <!-- Summary bar -->
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h2 class="text-2xl font-bold text-white" id="results-title">Takeoff Complete</h2>
+                <p class="text-gray-500 text-sm" id="results-subtitle"></p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="downloadExcel()" class="bg-brand hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Download Excel
+                </button>
+                <button onclick="resetUI()" class="bg-dark-card hover:bg-dark-hover border border-dark-border text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    New Takeoff
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats cards -->
+        <div id="stats-cards" class="grid grid-cols-4 gap-4 mb-6"></div>
+
+        <!-- Results table -->
+        <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden mb-6">
+            <div class="px-6 py-4 border-b border-dark-border flex items-center justify-between">
+                <h3 class="font-semibold text-white">Quantity Takeoff</h3>
+                <div class="flex items-center gap-3 text-xs">
+                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-success"></span><span class="text-gray-500">High</span></span>
+                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-warning"></span><span class="text-gray-500">Medium</span></span>
+                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-danger"></span><span class="text-gray-500">Low</span></span>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-dark-border text-gray-500 text-xs">
+                            <th class="text-left px-6 py-3 font-medium">S.NO</th>
+                            <th class="text-left px-3 py-3 font-medium">TAG</th>
+                            <th class="text-left px-3 py-3 font-medium">DESCRIPTION</th>
+                            <th class="text-right px-3 py-3 font-medium">QTY</th>
+                            <th class="text-center px-3 py-3 font-medium">UNIT</th>
+                            <th class="text-left px-3 py-3 font-medium">SPECIFICATION</th>
+                            <th class="text-center px-3 py-3 font-medium">CONFIDENCE</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Vector layers -->
+        <div class="bg-dark-card border border-dark-border rounded-xl p-6 mb-6">
+            <h3 class="font-semibold text-white mb-4">Vector Graphics Analysis</h3>
+            <div id="vector-layers" class="grid grid-cols-2 gap-3"></div>
+        </div>
+    </div>
+</main>
+
+<script>
+let selectedFile = null;
+let currentJobId = null;
+
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (file && file.name.endsWith('.pdf')) {
+        selectedFile = file;
+        document.getElementById('dropzone').classList.add('border-brand');
+        document.getElementById('dropzone').innerHTML = `
+            <svg class="w-12 h-12 text-brand mx-auto mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <p class="text-gray-200 text-lg font-medium mb-1">${file.name}</p>
+            <p class="text-gray-600 text-sm">${(file.size / 1024 / 1024).toFixed(2)} MB · Click to change</p>
+        `;
+        document.getElementById('options-section').classList.remove('hidden');
+    }
+}
+
+// Drag and drop
+const dropzone = document.getElementById('dropzone');
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => {
+    dropzone.addEventListener(e, (ev) => { ev.preventDefault(); ev.stopPropagation(); });
+});
+['dragenter', 'dragover'].forEach(e => dropzone.addEventListener(e, () => dropzone.classList.add('dragover')));
+['dragleave', 'drop'].forEach(e => dropzone.addEventListener(e, () => dropzone.classList.remove('dragover')));
+dropzone.addEventListener('drop', (ev) => {
+    const file = ev.dataTransfer.files[0];
+    if (file && file.name.endsWith('.pdf')) {
+        selectedFile = file;
+        document.getElementById('file-input').files = ev.dataTransfer.files;
+        handleFileSelect({ target: { files: ev.dataTransfer.files } });
+    }
+});
+
+async function startAnalysis() {
+    if (!selectedFile) return;
+
+    const discipline = document.getElementById('discipline-select').value;
+    const scaleRoom = document.getElementById('scale-room').value;
+    const scaleDim = document.getElementById('scale-dim').value;
+    const vlVerify = document.getElementById('vl-verify').checked;
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    formData.append('discipline', discipline);
+    if (scaleRoom) formData.append('scale_ref_room', scaleRoom);
+    if (scaleDim) formData.append('scale_ref_dim', scaleDim);
+    formData.append('vl_verify', vlVerify);
+
+    // Show processing
+    document.getElementById('upload-section').classList.add('hidden');
+    document.getElementById('processing-section').classList.remove('hidden');
+    document.getElementById('processing-filename').textContent = selectedFile.name;
+    document.getElementById('processing-status').textContent = 'Uploading file...';
+
+    try {
+        const resp = await fetch('/api/analyze', { method: 'POST', body: formData });
+        const data = await resp.json();
+        currentJobId = data.job_id;
+        pollStatus(data.job_id);
+    } catch (err) {
+        document.getElementById('processing-status').textContent = 'Error: ' + err.message;
+    }
+}
+
+async function pollStatus(jobId) {
+    const poll = async () => {
+        try {
+            const resp = await fetch(`/api/jobs/${jobId}`);
+            const data = await resp.json();
+
+            if (data.status === 'complete') {
+                document.getElementById('processing-section').classList.add('hidden');
+                showResults(data);
+            } else if (data.status === 'error') {
+                document.getElementById('processing-status').textContent = 'Error: ' + (data.error || 'Unknown error');
+            } else {
+                document.getElementById('processing-status').textContent = 'Extracting quantities...';
+                setTimeout(poll, 2000);
+            }
+        } catch (err) {
+            document.getElementById('processing-status').textContent = 'Error: ' + err.message;
+        }
+    };
+    poll();
+}
+
+function showResults(data) {
+    document.getElementById('results-section').classList.remove('hidden');
+    const results = data.results || [];
+    if (!results.length) return;
+
+    const r = results[0];
+    document.getElementById('results-title').textContent = `${r.discipline_name} Takeoff Complete`;
+    document.getElementById('results-subtitle').textContent = `Scale: 1:${r.scale} · ${r.texts_count} text annotations · ${results.length} page(s)`;
+
+    // Stats cards
+    const stats = document.getElementById('stats-cards');
+    const measurements = r.measurements || {};
+    const components = r.components || {};
+
+    let highCount = 0, medCount = 0, lowCount = 0;
+    // Count components as high confidence
+    for (const [k, v] of Object.entries(components)) {
+        if (k === 'room_dimensions' || k === 'rooms') continue;
+        if (typeof v === 'object' && v !== null) {
+            if (v.count) highCount++;
+            else if (!v.type) { for (const vv of Object.values(v)) { if (vv > 0) highCount++; } }
+        }
+    }
+    for (const [k, v] of Object.entries(measurements)) {
+        if (typeof v === 'number' && v !== 0) {
+            if (k.includes('rmt') || k.includes('sqmt')) medCount++;
+            else lowCount++;
+        }
+    }
+
+    const ductLen = measurements.duct_length_rmt || 0;
+    const pipeLen = (measurements.blue_pipe_total_rmt || measurements.blue_pipe_single_rmt || 0);
+    const totalItems = highCount + medCount + lowCount;
+
+    stats.innerHTML = `
+        <div class="bg-dark-card border border-dark-border rounded-xl p-4">
+            <div class="text-2xl font-bold text-white">${totalItems}</div>
+            <div class="text-xs text-gray-500 mt-1">Total Items</div>
+        </div>
+        <div class="bg-dark-card border border-dark-border rounded-xl p-4">
+            <div class="text-2xl font-bold text-white">${ductLen > 0 ? ductLen.toFixed(1) + ' RMT' : '—'}</div>
+            <div class="text-xs text-gray-500 mt-1">Ductwork Length</div>
+        </div>
+        <div class="bg-dark-card border border-dark-border rounded-xl p-4">
+            <div class="text-2xl font-bold text-white">${pipeLen > 0 ? pipeLen.toFixed(1) + ' RMT' : '—'}</div>
+            <div class="text-xs text-gray-500 mt-1">Pipe Length</div>
+        </div>
+        <div class="bg-dark-card border border-dark-border rounded-xl p-4">
+            <div class="text-2xl font-bold text-white">1:${r.scale}</div>
+            <div class="text-xs text-gray-500 mt-1">Drawing Scale</div>
+        </div>
+    `;
+
+    // Results table
+    const tbody = document.getElementById('results-tbody');
+    let sno = 1;
+    let rows = '';
+
+    // Components (high confidence)
+    for (const [tag, data] of Object.entries(components)) {
+        if (tag === 'room_dimensions' || tag === 'rooms') continue;
+        if (typeof data === 'object' && data !== null) {
+            if (data.count) {
+                rows += rowHTML(sno++, tag, data.type || tag, data.count, data.unit || 'No', '', 'High');
+            } else if (!data.type) {
+                for (const [variant, count] of Object.entries(data)) {
+                    if (count > 0) rows += rowHTML(sno++, variant, `${tag} variant`, count, 'No', '', 'High');
+                }
+            }
+        }
+    }
+
+    // Measurements (medium/low confidence)
+    for (const [key, val] of Object.entries(measurements)) {
+        if (typeof val === 'number' && val !== 0) {
+            let unit = 'RMT';
+            if (key.includes('sqmt') || key.includes('sm_')) unit = 'SQMT';
+            else if (key.includes('symbols') || key.includes('segments') || key.includes('paths')) unit = 'No';
+            const conf = (key.includes('rmt') || key.includes('sqmt')) ? 'Medium' : 'Low';
+            const displayVal = typeof val === 'number' ? val.toFixed(1) : val;
+            rows += rowHTML(sno++, key, key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()), displayVal, unit, `Scale 1:${r.scale}`, conf);
+        }
+    }
+
+    // Rooms
+    const rooms = components.rooms || [];
+    if (rooms.length) {
+        rows += `<tr class="border-b border-dark-border bg-dark-hover/30"><td colspan="7" class="px-6 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Rooms</td></tr>`;
+        for (const room of rooms) {
+            rows += rowHTML(sno++, '', room.name, 1, 'Room', room.dimension || '', 'High');
+        }
+    }
+
+    tbody.innerHTML = rows;
+
+    // Vector layers
+    const vlDiv = document.getElementById('vector-layers');
+    const vectorData = r.vector_summary || {};
+    let layerHTML = '';
+    for (const [layer, stats] of Object.entries(vectorData)) {
+        const isHVAC = ['magenta_duct', 'blue_pipe', 'green_supply', 'cyan_piping', 'orange_equipment'].includes(layer);
+        if (!isHVAC && stats.paths < 100) continue;
+        const colorMap = {
+            'magenta_duct': '#ff00ff', 'blue_pipe': '#0066ff', 'green_supply': '#00ff00',
+            'cyan_piping': '#00ffff', 'orange_equipment': '#ff7f00', 'red_fire': '#ff0000',
+            'gray_architectural': '#808080', 'black_structural': '#ffffff',
+        };
+        const color = colorMap[layer] || '#666';
+        layerHTML += `
+            <div class="flex items-center justify-between bg-dark-bg rounded-lg px-4 py-3 border border-dark-border">
+                <div class="flex items-center gap-3">
+                    <span class="w-3 h-3 rounded-full" style="background:${color}"></span>
+                    <span class="text-sm text-gray-300 mono">${layer}</span>
+                </div>
+                <div class="flex gap-4 text-xs text-gray-500">
+                    <span>${stats.paths} paths</span>
+                    <span>${stats.lines} lines</span>
+                    <span>${stats.filled} filled</span>
+                </div>
+            </div>
+        `;
+    }
+    vlDiv.innerHTML = layerHTML || '<p class="text-gray-600 text-sm">No significant vector layers found</p>';
+}
+
+function rowHTML(sno, tag, desc, qty, unit, spec, conf) {
+    const confClass = conf === 'High' ? 'conf-high' : conf === 'Medium' ? 'conf-medium' : 'conf-low';
+    return `
+        <tr class="border-b border-dark-border hover:bg-dark-hover/30 transition-colors">
+            <td class="px-6 py-3 text-gray-600 text-xs">${sno}</td>
+            <td class="px-3 py-3 text-gray-300 font-medium mono text-xs">${tag}</td>
+            <td class="px-3 py-3 text-gray-400">${desc}</td>
+            <td class="px-3 py-3 text-right text-white font-medium">${qty}</td>
+            <td class="px-3 py-3 text-center text-gray-500 text-xs">${unit}</td>
+            <td class="px-3 py-3 text-gray-600 text-xs">${spec}</td>
+            <td class="px-3 py-3 text-center"><span class="${confClass} text-xs px-2 py-1 rounded font-medium">${conf}</span></td>
+        </tr>
+    `;
+}
+
+async function downloadExcel() {
+    if (!currentJobId) return;
+    window.location.href = `/api/jobs/${currentJobId}/download`;
+}
+
+function resetUI() {
+    selectedFile = null;
+    currentJobId = null;
+    document.getElementById('upload-section').classList.remove('hidden');
+    document.getElementById('results-section').classList.add('hidden');
+    document.getElementById('processing-section').classList.add('hidden');
+    document.getElementById('options-section').classList.add('hidden');
+    document.getElementById('dropzone').classList.remove('border-brand');
+    document.getElementById('dropzone').innerHTML = `
+        <div class="mb-4"><svg class="w-12 h-12 text-gray-600 mx-auto" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg></div>
+        <p class="text-gray-300 text-lg font-medium mb-2">Drop PDF drawing here</p>
+        <p class="text-gray-600 text-sm">or click to browse · PDF only · Multi-page supported</p>
+        <input type="file" id="file-input" accept=".pdf" class="hidden" onchange="handleFileSelect(event)" />
+    `;
+    // Re-attach events
+    const dz = document.getElementById('dropzone');
+    dz.onclick = () => document.getElementById('file-input').click();
+}
+</script>
+</body>
+</html>
