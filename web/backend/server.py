@@ -241,10 +241,16 @@ async def list_disciplines():
     }
 
 
-# Serve frontend static files
+# Serve frontend static files (must be last - catch-all)
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
 if FRONTEND_DIR.exists():
-    app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")
+    # Mount on /app to avoid catching /api routes
+    app.mount("/app", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")
+    
+    # Serve index.html at root
+    @app.get("/")
+    async def root():
+        return FileResponse(str(FRONTEND_DIR / "index.html"))
 
 
 if __name__ == "__main__":
