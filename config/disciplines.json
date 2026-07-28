@@ -1,0 +1,218 @@
+{
+  "hvac": {
+    "name": "HVAC",
+    "title_keywords": ["HVAC", "AIR CONDITIONING", "VENTILATION", "AHU", "DUCT", "MECHANICAL"],
+    "color_layers": {
+      "magenta": "ductwork",
+      "blue": "chilled_water",
+      "green": "supply_air",
+      "cyan": "condensate",
+      "orange": "equipment"
+    },
+    "tag_patterns": {
+      "AHU": {"regex": "AHU[- ]?ROOM[- ]?(\\d+)", "type": "air_handling_unit", "unit": "No"},
+      "FD": {"regex": "FD([1-5]|A)", "type": "fire_damper", "unit": "No", "variants": ["FD1","FD2","FD3","FD4","FD5","FDA"]},
+      "FHC": {"regex": "FHC", "type": "fire_hatch_cover", "unit": "No"},
+      "SPD": {"regex": "SPD", "type": "smoke_pressure_damper", "unit": "No"},
+      "GL": {"regex": "GL[23]", "type": "grille_louver", "unit": "No", "variants": ["GL2","GL3"]},
+      "SA": {"regex": "SA[- ]?\\d+", "type": "supply_air_diffuser", "unit": "No"},
+      "RA": {"regex": "RA[- ]?\\d+", "type": "return_air_grille", "unit": "No"},
+      "EA": {"regex": "EA[- ]?\\d+", "type": "exhaust_air_grille", "unit": "No"},
+      "VAV": {"regex": "VAV[- ]?\\d+", "type": "vav_box", "unit": "No"},
+      "FCU": {"regex": "FCU[- ]?\\d+", "type": "fan_coil_unit", "unit": "No"},
+      "EF": {"regex": "EF[- ]?\\d+", "type": "exhaust_fan", "unit": "No"},
+      "SF": {"regex": "SF[- ]?\\d+", "type": "supply_fan", "unit": "No"}
+    },
+    "dimension_patterns": {
+      "room_size": "(\\d{3,5})\\s*[xX]\\s*(\\d{3,5})",
+      "duct_size": "(\\d{2,4})\\s*[xX]\\s*(\\d{2,4})\\s*(?:mm)?"
+    },
+    "measurements": {
+      "duct_unit": "SQMT",
+      "pipe_unit": "RMT",
+      "pipe_multiplier": 2,
+      "duct_area_method": "length × perimeter"
+    },
+    "room_keywords": ["AHU ROOM", "BOYS TOILET", "GIRLS TOILET", "STORE ROOM", "HUB ROOM", "DB ROOM", "LOBBY", "ELECTRICAL", "BATTERY", "SHAFT"]
+  },
+
+  "plumbing": {
+    "name": "Plumbing",
+    "title_keywords": ["PLUMBING", "WATER", "DRAINAGE", "SANITARY", "SEWERAGE", "WATER SUPPLY"],
+    "color_layers": {
+      "blue": "cold_water",
+      "green": "hot_water",
+      "brown": "soil_waste",
+      "gray": "vent_pipe",
+      "cyan": "gas_pipe"
+    },
+    "tag_patterns": {
+      "WP": {"regex": "WP[- ]?\\d+", "type": "water_pump", "unit": "No"},
+      "CW": {"regex": "CW[- ]?\\d+", "type": "cold_water_pipe", "unit": "RMT"},
+      "HW": {"regex": "HW[- ]?\\d+", "type": "hot_water_pipe", "unit": "RMT"},
+      "ST": {"regex": "ST[- ]?\\d+", "type": "storage_tank", "unit": "No"},
+      "VP": {"regex": "VP[- ]?\\d+", "type": "vent_pipe", "unit": "RMT"},
+      "FV": {"regex": "FV[- ]?\\d+", "type": "flush_valve", "unit": "No"},
+      "WC": {"regex": "WC", "type": "water_closet", "unit": "No"},
+      "WB": {"regex": "WB", "type": "wash_basin", "unit": "No"},
+      "SH": {"regex": "SH", "type": "shower", "unit": "No"},
+      "CH": {"regex": "CH", "type": "kitchen_sink", "unit": "No"},
+      "DW": {"regex": "D[.]?W", "type": "drinking_water", "unit": "No"},
+      "OHWT": {"regex": "OHWT[- ]?\\d+", "type": "overhead_water_tank", "unit": "No"},
+      "UGWT": {"regex": "UGWT[- ]?\\d+", "type": "underground_water_tank", "unit": "No"}
+    },
+    "dimension_patterns": {
+      "pipe_size": "(?:DN|NB)?\\s?(\\d{2,3})\\s*(?:mm)?",
+      "tank_size": "(\\d{3,5})\\s*[xX]\\s*(\\d{3,5})"
+    },
+    "measurements": {
+      "pipe_unit": "RMT",
+      "fixture_unit": "No"
+    },
+    "room_keywords": ["TOILET", "BATHROOM", "KITCHEN", "PUMP ROOM", "TANK", "UTILITY"]
+  },
+
+  "electrical": {
+    "name": "Electrical",
+    "title_keywords": ["ELECTRICAL", "POWER", "LIGHTING", "WIRING", "CABLE", "SINGLE LINE", "LAYOUT"],
+    "color_layers": {
+      "red": "power_cable",
+      "yellow": "control_cable",
+      "blue": "communication_cable",
+      "green": "earthing"
+    },
+    "tag_patterns": {
+      "LT": {"regex": "LT[- ]?\\d+", "type": "lighting_fixture", "unit": "No"},
+      "DB": {"regex": "DB[- ]?\\d+", "type": "distribution_board", "unit": "No"},
+      "MCC": {"regex": "MCC[- ]?\\d+", "type": "motor_control_center", "unit": "No"},
+      "DG": {"regex": "DG[- ]?\\d+", "type": "diesel_generator", "unit": "No"},
+      "TR": {"regex": "TR[- ]?\\d+", "type": "transformer", "unit": "No"},
+      "UPS": {"regex": "UPS[- ]?\\d+", "type": "ups_system", "unit": "No"},
+      "SP": {"regex": "SP[- ]?\\d+", "type": "street_light_pole", "unit": "No"},
+      "ST": {"regex": "ST[- ]?\\d+", "type": "street_light", "unit": "No"},
+      "FL": {"regex": "FL[- ]?\\d+", "type": "flood_light", "unit": "No"},
+      "CABLE": {"regex": "C[- ]?\\d+", "type": "cable_run", "unit": "RMT"},
+      "AC": {"regex": "AC[- ]?\\d+", "type": "air_conditioner_outlet", "unit": "No"}
+    },
+    "dimension_patterns": {
+      "cable_size": "(\\d{1,3})\\s*(?:mm2|sqmm|Sq\\.?mm)",
+      "cable_length": "(\\d{1,4})\\s*(?:m|M)"
+    },
+    "measurements": {
+      "cable_unit": "RMT",
+      "fixture_unit": "No"
+    },
+    "room_keywords": ["ELECTRICAL", "UPS", "BATTERY", "DG ROOM", "TRANSFORMER", "PANEL", "SUBSTATION"]
+  },
+
+  "fire_protection": {
+    "name": "Fire Protection",
+    "title_keywords": ["FIRE", "FIRE FIGHTING", "FIRE ALARM", "SPRINKLER", "FIRE PROTECTION"],
+    "color_layers": {
+      "red": "fire_pipe",
+      "green": "sprinkler",
+      "orange": "fire_alarm_device"
+    },
+    "tag_patterns": {
+      "FD": {"regex": "FD([1-5]|A)", "type": "fire_damper", "unit": "No", "variants": ["FD1","FD2","FD3","FD4","FD5","FDA"]},
+      "FHC": {"regex": "FHC", "type": "fire_hatch_cover", "unit": "No"},
+      "SPD": {"regex": "SPD", "type": "smoke_pressure_damper", "unit": "No"},
+      "SPK": {"regex": "SPK[- ]?\\d+", "type": "sprinkler_head", "unit": "No"},
+      "HCV": {"regex": "HCV[- ]?\\d+", "type": "hose_cabinet_valve", "unit": "No"},
+      "SI": {"regex": "SI[- ]?\\d+", "type": "smoke_detector", "unit": "No"},
+      "HD": {"regex": "HD[- ]?\\d+", "type": "heat_detector", "unit": "No"},
+      "MA": {"regex": "MA[- ]?\\d+", "type": "manual_call_point", "unit": "No"},
+      "FP": {"regex": "FP[- ]?\\d+", "type": "fire_pump", "unit": "No"},
+      "FIRE-LIFT": {"regex": "FIRE[- ]?LIFT", "type": "fire_lift", "unit": "No"}
+    },
+    "dimension_patterns": {
+      "pipe_size": "(?:DN|NB)?\\s?(\\d{2,3})\\s*(?:mm)?"
+    },
+    "measurements": {
+      "pipe_unit": "RMT",
+      "device_unit": "No"
+    },
+    "room_keywords": ["FIRE", "PUMP ROOM", "FIRE CONTROL"]
+  },
+
+  "structural": {
+    "name": "Structural",
+    "title_keywords": ["STRUCTURAL", "STEEL", "CONCRETE", "FOUNDATION", "FRAMING", "GENERAL ARRANGEMENT"],
+    "color_layers": {
+      "black": "structural_steel",
+      "gray": "concrete"
+    },
+    "tag_patterns": {
+      "COL": {"regex": "C\\d+", "type": "column", "unit": "No"},
+      "BEAM": {"regex": "B\\d+|BEAM[- ]?\\d+", "type": "beam", "unit": "No"},
+      "ST": {"regex": "ST[- ]?\\d+", "type": "staircase", "unit": "No"},
+      "SEC": {"regex": "SEC[- ]?[A-H]", "type": "section", "unit": "No"},
+      "ELE": {"regex": "ELE[- ]?[A-D]", "type": "elevator", "unit": "No"}
+    },
+    "dimension_patterns": {
+      "member_size": "(\\d{2,4})\\s*[xX]\\s*(\\d{2,4})\\s*(?:mm)?",
+      "tread_riser": "TREAD\\s*=\\s*(\\d+)\\s*MM.*RISER\\s*=\\s*(\\d+)\\s*MM.*NO\\.?\\s*OF\\s*RISERS\\s*=\\s*(\\d+)"
+    },
+    "measurements": {
+      "member_unit": "No",
+      "length_unit": "RMT"
+    },
+    "room_keywords": []
+  },
+
+  "civil": {
+    "name": "Civil / Architectural",
+    "title_keywords": ["ARCHITECTURAL", "CIVIL", "FLOOR PLAN", "LAYOUT", "GENERAL ARRANGEMENT"],
+    "color_layers": {
+      "gray": "walls",
+      "black": "structural"
+    },
+    "tag_patterns": {
+      "ROOM": {"regex": "[A-Z][A-Z ]+(?=\\s+\\d{4}X\\d{4})", "type": "room", "unit": "Room"},
+      "SEC": {"regex": "SEC[- ]?[A-H]", "type": "section", "unit": "No"},
+      "ELE": {"regex": "ELE[- ]?[A-D]", "type": "elevator", "unit": "No"},
+      "ST": {"regex": "ST[- ]?\\d+", "type": "staircase", "unit": "No"},
+      "D": {"regex": "D[1-3]", "type": "door", "unit": "No"},
+      "SSL": {"regex": "SSL\\s*\\+?\\d+\\.?\\d*\\s*M", "type": "level_marker", "unit": "Locations"}
+    },
+    "dimension_patterns": {
+      "room_size": "(\\d{3,5})\\s*[xX]\\s*(\\d{3,5})",
+      "passage_width": "(\\d+\\.\\d+)\\s*M\\s*WIDE"
+    },
+    "measurements": {
+      "area_unit": "SQMT",
+      "count_unit": "No"
+    },
+    "room_keywords": ["ROOM", "TOILET", "HUB", "LOBBY", "SHAFT", "STORE", "AREA", "PASSAGE", "LOCKER", "KITCHEN", "BATTERY", "ELECTRICAL"]
+  },
+
+  "pid": {
+    "name": "P&ID",
+    "title_keywords": ["P&ID", "PIPING AND INSTRUMENTATION", "PROCESS FLOW", "PFD"],
+    "color_layers": {
+      "blue": "process_pipe",
+      "green": "instrumentation",
+      "red": "control_signal",
+      "orange": "equipment"
+    },
+    "tag_patterns": {
+      "VALVE": {"regex": "[A-Z]{2,4}[- ]?\\d+", "type": "valve", "unit": "No"},
+      "PI": {"regex": "PI[- ]?\\d+", "type": "pressure_indicator", "unit": "No"},
+      "TI": {"regex": "TI[- ]?\\d+", "type": "temperature_indicator", "unit": "No"},
+      "FI": {"regex": "FI[- ]?\\d+", "type": "flow_indicator", "unit": "No"},
+      "LI": {"regex": "LI[- ]?\\d+", "type": "level_indicator", "unit": "No"},
+      "PSV": {"regex": "PSV[- ]?\\d+", "type": "pressure_safety_valve", "unit": "No"},
+      "LINE": {"regex": "\\d{1,2}[\"- ]\\d{1,3}[\"- ][A-Z]{2,4}-\\d+", "type": "pipe_line", "unit": "RMT"}
+    },
+    "dimension_patterns": {
+      "line_number": "(\\d{1,2})[\"- ](\\d{1,3})[\"- ]([A-Z]{2,4})[- ](\\d+)",
+      "pipe_size": "(\\d{1,2})[\" ]"
+    },
+    "measurements": {
+      "pipe_unit": "RMT",
+      "valve_unit": "No",
+      "instrument_unit": "No"
+    },
+    "room_keywords": []
+  }
+}

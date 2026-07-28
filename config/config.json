@@ -1,0 +1,44 @@
+{
+  "version": "1.0.0",
+  "color_layers": {
+    "magenta": {"rgb": [1.0, 0.0, 1.0], "default_use": "ductwork"},
+    "blue": {"rgb": [0.0, 0.0, 1.0], "default_use": "chilled_water"},
+    "green": {"rgb": [0.0, 1.0, 0.0], "default_use": "supply_air"},
+    "cyan": {"rgb": [0.0, 1.0, 1.0], "default_use": "condensate"},
+    "red": {"rgb": [1.0, 0.0, 0.0], "default_use": "fire_alarm"},
+    "orange": {"rgb": [1.0, 0.498, 0.0], "default_use": "equipment"},
+    "gray": {"rgb": [0.502, 0.502, 0.502], "default_use": "architectural"},
+    "black": {"rgb": [0.0, 0.0, 0.0], "default_use": "structural"},
+    "yellow": {"rgb": [1.0, 1.0, 0.0], "default_use": "electrical"},
+    "purple": {"rgb": [0.749, 0.0, 1.0], "default_use": "communication"}
+  },
+  "standard_duct_sizes": [
+    {"size": "200x200", "width_mm": 200, "height_mm": 200, "perimeter_m": 0.80},
+    {"size": "300x300", "width_mm": 300, "height_mm": 300, "perimeter_m": 1.20},
+    {"size": "400x300", "width_mm": 400, "height_mm": 300, "perimeter_m": 1.40},
+    {"size": "500x400", "width_mm": 500, "height_mm": 400, "perimeter_m": 1.80},
+    {"size": "600x400", "width_mm": 600, "height_mm": 400, "perimeter_m": 2.00},
+    {"size": "800x500", "width_mm": 800, "height_mm": 500, "perimeter_m": 2.60}
+  ],
+  "standard_pipe_sizes": [
+    {"dn": 15, "od_mm": 21.3, "inch": "1/2\""},
+    {"dn": 20, "od_mm": 26.7, "inch": "3/4\""},
+    {"dn": 25, "od_mm": 33.4, "inch": "1\""},
+    {"dn": 32, "od_mm": 42.2, "inch": "1-1/4\""},
+    {"dn": 40, "od_mm": 48.3, "inch": "1-1/2\""},
+    {"dn": 50, "od_mm": 60.3, "inch": "2\""},
+    {"dn": 65, "od_mm": 73.0, "inch": "2-1/2\""},
+    {"dn": 80, "od_mm": 88.9, "inch": "3\""},
+    {"dn": 100, "od_mm": 114.3, "inch": "4\""},
+    {"dn": 150, "od_mm": 168.3, "inch": "6\""}
+  ],
+  "vl_model": {
+    "api_url": "https://api-gt.moglix.com/api/ai-utility/chat-completions",
+    "tenant_id": "tendershark-16ad9a8c-0e6d-4b62-92b9-6c82d319f700",
+    "model": "Qwen/Qwen3-VL-8B-Instruct",
+    "max_image_kb": 50,
+    "max_tokens": 500,
+    "timeout_seconds": 85,
+    "sleep_between_calls": 3
+  }
+}
