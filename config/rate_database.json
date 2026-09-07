@@ -1,0 +1,180 @@
+{
+  "cpwd_2024": {
+    "name": "CPWD Delhi SR 2024",
+    "currency": "INR",
+    "rates": {
+      "hvac": {
+        "ahu": {"unit": "No", "rate": 250000, "description": "Air Handling Unit, installed"},
+        "fire_damper": {"unit": "No", "rate": 8500, "description": "Fire damper FD1, wall mounted"},
+        "duct_sm": {"unit": "SQMT", "rate": 1850, "description": "GI duct sheet metal, installed"},
+        "chw_pipe": {"unit": "RMT", "rate": 1200, "description": "CHW pipe, insulated, per RMT"},
+        "grille": {"unit": "No", "rate": 3500, "description": "Supply air grille"},
+        "diffuser": {"unit": "No", "rate": 2800, "description": "Ceiling diffuser"},
+        "vav_box": {"unit": "No", "rate": 45000, "description": "VAV box with controls"},
+        "fcu": {"unit": "No", "rate": 35000, "description": "Fan coil unit, ceiling type"},
+        "exhaust_fan": {"unit": "No", "rate": 12000, "description": "Exhaust fan, wall mounted"},
+        "supply_fan": {"unit": "No", "rate": 18000, "description": "Supply fan, centrifugal"},
+        "smoke_pressure_damper": {"unit": "No", "rate": 9500, "description": "Smoke/pressure damper, installed"},
+        "fire_hatch_cover": {"unit": "No", "rate": 6500, "description": "Fire hatch cover"},
+        "grille_louver": {"unit": "No", "rate": 4200, "description": "Grille louver, wall mounted"},
+        "supply_air_diffuser": {"unit": "No", "rate": 2800, "description": "Supply air diffuser, ceiling"},
+        "return_air_grille": {"unit": "No", "rate": 2600, "description": "Return air grille"},
+        "exhaust_air_grille": {"unit": "No", "rate": 2400, "description": "Exhaust air grille"}
+      },
+      "plumbing": {
+        "wc": {"unit": "No", "rate": 12000, "description": "Wall mounted WC, complete"},
+        "wb": {"unit": "No", "rate": 4500, "description": "Wash basin, complete"},
+        "cw_pipe": {"unit": "RMT", "rate": 850, "description": "CPVC cold water pipe"},
+        "soil_pipe": {"unit": "RMT", "rate": 1500, "description": "CI soil pipe, Hubless"},
+        "shower": {"unit": "No", "rate": 3500, "description": "Shower set, complete"},
+        "kitchen_sink": {"unit": "No", "rate": 5500, "description": "Kitchen sink with fixtures"},
+        "water_pump": {"unit": "No", "rate": 28000, "description": "Water pump set"},
+        "storage_tank": {"unit": "No", "rate": 45000, "description": "Storage tank, Sintex"},
+        "flush_valve": {"unit": "No", "rate": 2200, "description": "Flush valve, complete"},
+        "hot_water_pipe": {"unit": "RMT", "rate": 1100, "description": "CPVC hot water pipe, insulated"},
+        "vent_pipe": {"unit": "RMT", "rate": 750, "description": "Vent pipe, UPVC"},
+        "overhead_water_tank": {"unit": "No", "rate": 85000, "description": "Overhead water tank, RCC"},
+        "underground_water_tank": {"unit": "No", "rate": 120000, "description": "Underground water tank, RCC"}
+      },
+      "electrical": {
+        "db": {"unit": "No", "rate": 45000, "description": "Distribution board"},
+        "lt_fixture": {"unit": "No", "rate": 2800, "description": "LED light fixture"},
+        "cable": {"unit": "RMT", "rate": 450, "description": "LT power cable, per RMT"},
+        "mcc": {"unit": "No", "rate": 125000, "description": "Motor control center"},
+        "dg": {"unit": "No", "rate": 850000, "description": "Diesel generator set"},
+        "transformer": {"unit": "No", "rate": 450000, "description": "Distribution transformer"},
+        "ups_system": {"unit": "No", "rate": 95000, "description": "UPS system with battery"},
+        "street_light_pole": {"unit": "No", "rate": 15000, "description": "Street light pole"},
+        "flood_light": {"unit": "No", "rate": 8500, "description": "Flood light, LED"},
+        "air_conditioner_outlet": {"unit": "No", "rate": 1500, "description": "AC power outlet point"}
+      },
+      "fire_protection": {
+        "sprinkler": {"unit": "No", "rate": 2200, "description": "Sprinkler head, installed"},
+        "fire_pipe": {"unit": "RMT", "rate": 950, "description": "GI fire pipe, red"},
+        "fire_pump": {"unit": "No", "rate": 185000, "description": "Fire fighting pump"},
+        "hose_cabinet_valve": {"unit": "No", "rate": 12500, "description": "Hose cabinet with valve"},
+        "smoke_detector": {"unit": "No", "rate": 1800, "description": "Smoke detector, addressable"},
+        "heat_detector": {"unit": "No", "rate": 1600, "description": "Heat detector, addressable"},
+        "manual_call_point": {"unit": "No", "rate": 1200, "description": "Manual call point, break glass"},
+        "fire_lift": {"unit": "No", "rate": 450000, "description": "Fire rated lift"},
+        "fire_damper": {"unit": "No", "rate": 8500, "description": "Fire damper FD1, wall mounted"},
+        "fire_hatch_cover": {"unit": "No", "rate": 6500, "description": "Fire hatch cover"},
+        "smoke_pressure_damper": {"unit": "No", "rate": 9500, "description": "Smoke/pressure damper"}
+      },
+      "structural": {
+        "column": {"unit": "No", "rate": 35000, "description": "RCC column, typical"},
+        "beam": {"unit": "No", "rate": 28000, "description": "RCC beam, typical"},
+        "staircase": {"unit": "No", "rate": 85000, "description": "RCC staircase flight"},
+        "section": {"unit": "No", "rate": 15000, "description": "Structural steel section"},
+        "elevator": {"unit": "No", "rate": 850000, "description": "Passenger elevator, 8 person"}
+      },
+      "civil": {
+        "room_area": {"unit": "SQMT", "rate": 4500, "description": "Built-up area cost per SQMT"},
+        "door": {"unit": "No", "rate": 8500, "description": "Flush door with frame"},
+        "window": {"unit": "No", "rate": 6500, "description": "Aluminum window"},
+        "level_marker": {"unit": "No", "rate": 500, "description": "Level marker / SSL plate"},
+        "elevator": {"unit": "No", "rate": 850000, "description": "Passenger elevator, 8 person"},
+        "staircase": {"unit": "No", "rate": 85000, "description": "RCC staircase flight"}
+      },
+      "pid": {
+        "gate_valve": {"unit": "No", "rate": 15000, "description": "Gate valve, DN100"},
+        "control_valve": {"unit": "No", "rate": 85000, "description": "Control valve with actuator"},
+        "pipe_a106": {"unit": "RMT", "rate": 3200, "description": "A106 carbon steel pipe, DN100"},
+        "psv": {"unit": "No", "rate": 45000, "description": "Pressure safety valve"},
+        "pressure_indicator": {"unit": "No", "rate": 8500, "description": "Pressure indicator/gauge"},
+        "temperature_indicator": {"unit": "No", "rate": 9500, "description": "Temperature indicator"},
+        "flow_indicator": {"unit": "No", "rate": 12000, "description": "Flow indicator/orifice"},
+        "level_indicator": {"unit": "No", "rate": 11000, "description": "Level indicator/transmitter"}
+      }
+    }
+  },
+  "mes_2024": {
+    "name": "MES Schedule of Rates 2024",
+    "currency": "INR",
+    "rates": {
+      "hvac": {
+        "ahu": {"unit": "No", "rate": 220000, "description": "Air Handling Unit, MES spec"},
+        "fire_damper": {"unit": "No", "rate": 7500, "description": "Fire damper, MES spec"},
+        "duct_sm": {"unit": "SQMT", "rate": 1650, "description": "GI duct sheet metal, MES spec"},
+        "chw_pipe": {"unit": "RMT", "rate": 1050, "description": "CHW pipe, insulated, MES spec"},
+        "grille": {"unit": "No", "rate": 3000, "description": "Supply air grille, MES spec"},
+        "diffuser": {"unit": "No", "rate": 2400, "description": "Ceiling diffuser, MES spec"},
+        "vav_box": {"unit": "No", "rate": 40000, "description": "VAV box, MES spec"},
+        "fcu": {"unit": "No", "rate": 30000, "description": "Fan coil unit, MES spec"},
+        "exhaust_fan": {"unit": "No", "rate": 10000, "description": "Exhaust fan, MES spec"},
+        "supply_fan": {"unit": "No", "rate": 15000, "description": "Supply fan, MES spec"},
+        "smoke_pressure_damper": {"unit": "No", "rate": 8500, "description": "Smoke/pressure damper, MES spec"},
+        "fire_hatch_cover": {"unit": "No", "rate": 5500, "description": "Fire hatch cover, MES spec"},
+        "grille_louver": {"unit": "No", "rate": 3800, "description": "Grille louver, MES spec"},
+        "supply_air_diffuser": {"unit": "No", "rate": 2400, "description": "Supply air diffuser, MES spec"},
+        "return_air_grille": {"unit": "No", "rate": 2200, "description": "Return air grille, MES spec"},
+        "exhaust_air_grille": {"unit": "No", "rate": 2000, "description": "Exhaust air grille, MES spec"}
+      },
+      "plumbing": {
+        "wc": {"unit": "No", "rate": 10000, "description": "Wall mounted WC, MES spec"},
+        "wb": {"unit": "No", "rate": 3800, "description": "Wash basin, MES spec"},
+        "cw_pipe": {"unit": "RMT", "rate": 750, "description": "CPVC cold water pipe, MES spec"},
+        "soil_pipe": {"unit": "RMT", "rate": 1300, "description": "CI soil pipe, MES spec"},
+        "shower": {"unit": "No", "rate": 3000, "description": "Shower set, MES spec"},
+        "kitchen_sink": {"unit": "No", "rate": 4500, "description": "Kitchen sink, MES spec"},
+        "water_pump": {"unit": "No", "rate": 24000, "description": "Water pump set, MES spec"},
+        "storage_tank": {"unit": "No", "rate": 38000, "description": "Storage tank, MES spec"},
+        "flush_valve": {"unit": "No", "rate": 1800, "description": "Flush valve, MES spec"},
+        "hot_water_pipe": {"unit": "RMT", "rate": 950, "description": "Hot water pipe, MES spec"},
+        "vent_pipe": {"unit": "RMT", "rate": 650, "description": "Vent pipe, MES spec"},
+        "overhead_water_tank": {"unit": "No", "rate": 72000, "description": "Overhead water tank, MES spec"},
+        "underground_water_tank": {"unit": "No", "rate": 100000, "description": "Underground water tank, MES spec"}
+      },
+      "electrical": {
+        "db": {"unit": "No", "rate": 40000, "description": "Distribution board, MES spec"},
+        "lt_fixture": {"unit": "No", "rate": 2400, "description": "LED light fixture, MES spec"},
+        "cable": {"unit": "RMT", "rate": 400, "description": "LT power cable, MES spec"},
+        "mcc": {"unit": "No", "rate": 110000, "description": "Motor control center, MES spec"},
+        "dg": {"unit": "No", "rate": 750000, "description": "Diesel generator, MES spec"},
+        "transformer": {"unit": "No", "rate": 400000, "description": "Transformer, MES spec"},
+        "ups_system": {"unit": "No", "rate": 85000, "description": "UPS system, MES spec"},
+        "street_light_pole": {"unit": "No", "rate": 13000, "description": "Street light pole, MES spec"},
+        "flood_light": {"unit": "No", "rate": 7500, "description": "Flood light, MES spec"},
+        "air_conditioner_outlet": {"unit": "No", "rate": 1200, "description": "AC outlet point, MES spec"}
+      },
+      "fire_protection": {
+        "sprinkler": {"unit": "No", "rate": 2000, "description": "Sprinkler head, MES spec"},
+        "fire_pipe": {"unit": "RMT", "rate": 850, "description": "GI fire pipe, MES spec"},
+        "fire_pump": {"unit": "No", "rate": 165000, "description": "Fire pump, MES spec"},
+        "hose_cabinet_valve": {"unit": "No", "rate": 11000, "description": "Hose cabinet, MES spec"},
+        "smoke_detector": {"unit": "No", "rate": 1500, "description": "Smoke detector, MES spec"},
+        "heat_detector": {"unit": "No", "rate": 1400, "description": "Heat detector, MES spec"},
+        "manual_call_point": {"unit": "No", "rate": 1000, "description": "Manual call point, MES spec"},
+        "fire_lift": {"unit": "No", "rate": 400000, "description": "Fire rated lift, MES spec"},
+        "fire_damper": {"unit": "No", "rate": 7500, "description": "Fire damper, MES spec"},
+        "fire_hatch_cover": {"unit": "No", "rate": 5500, "description": "Fire hatch cover, MES spec"},
+        "smoke_pressure_damper": {"unit": "No", "rate": 8500, "description": "Smoke/pressure damper, MES spec"}
+      },
+      "structural": {
+        "column": {"unit": "No", "rate": 32000, "description": "RCC column, MES spec"},
+        "beam": {"unit": "No", "rate": 25000, "description": "RCC beam, MES spec"},
+        "staircase": {"unit": "No", "rate": 75000, "description": "RCC staircase, MES spec"},
+        "section": {"unit": "No", "rate": 13500, "description": "Structural steel section, MES spec"},
+        "elevator": {"unit": "No", "rate": 750000, "description": "Passenger elevator, MES spec"}
+      },
+      "civil": {
+        "room_area": {"unit": "SQMT", "rate": 4000, "description": "Built-up area, MES spec"},
+        "door": {"unit": "No", "rate": 7500, "description": "Flush door, MES spec"},
+        "window": {"unit": "No", "rate": 5800, "description": "Aluminum window, MES spec"},
+        "level_marker": {"unit": "No", "rate": 450, "description": "Level marker, MES spec"},
+        "elevator": {"unit": "No", "rate": 750000, "description": "Passenger elevator, MES spec"},
+        "staircase": {"unit": "No", "rate": 75000, "description": "RCC staircase, MES spec"}
+      },
+      "pid": {
+        "gate_valve": {"unit": "No", "rate": 13500, "description": "Gate valve, MES spec"},
+        "control_valve": {"unit": "No", "rate": 75000, "description": "Control valve, MES spec"},
+        "pipe_a106": {"unit": "RMT", "rate": 2800, "description": "A106 pipe, MES spec"},
+        "psv": {"unit": "No", "rate": 40000, "description": "Pressure safety valve, MES spec"},
+        "pressure_indicator": {"unit": "No", "rate": 7500, "description": "Pressure indicator, MES spec"},
+        "temperature_indicator": {"unit": "No", "rate": 8500, "description": "Temperature indicator, MES spec"},
+        "flow_indicator": {"unit": "No", "rate": 10500, "description": "Flow indicator, MES spec"},
+        "level_indicator": {"unit": "No", "rate": 9500, "description": "Level indicator, MES spec"}
+      }
+    }
+  }
+}

@@ -2,6 +2,9 @@
 # Start the Takeoff Tool web server
 # Usage: ./start.sh
 
+# Ensure Homebrew bin is in PATH (for tesseract, etc.)
+export PATH="/opt/homebrew/bin:$PATH"
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR/web/backend"
 

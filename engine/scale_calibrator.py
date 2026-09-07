@@ -75,6 +75,23 @@ class ScaleCalibrator:
         
         avg_scale = sum(filtered) / len(filtered)
         
+        # Sanity check: HVAC layouts are typically 1:50 to 1:200
+        # If scale is way off, try title block scale
+        if avg_scale > 200:
+            for t in self.texts:
+                text_upper = t["text"].upper()
+                if "SCALE" in text_upper:
+                    import re as re2
+                    m = re2.search(r"1[:\s]*(\d+)", text_upper)
+                    if m:
+                        tb_scale = int(m.group(1))
+                        if 20 < tb_scale < 200:
+                            return tb_scale, f"Title block scale 1:{tb_scale} (auto-calib gave 1:{avg_scale:.0f} - out of range)"
+            
+            # If no title block scale, clamp to reasonable max
+            if avg_scale > 300:
+                return 100, f"Scale clamped to 1:100 (calib gave 1:{avg_scale:.0f} - likely wall mismatch)"
+        
         info = f"Calibrated from {len(filtered)} measurements (median 1:{median_scale:.0f})"
         return avg_scale, info
     

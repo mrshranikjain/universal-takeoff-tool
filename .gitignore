@@ -9,3 +9,5 @@ build/
 .DS_Store
 tests/fixtures/*.pdf
 tests/fixtures/*.dwg
+logs/
+*.bak-*

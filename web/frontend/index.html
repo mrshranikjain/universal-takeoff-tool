@@ -1,113 +1,511 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Takeoff AI — Multi-Discipline Quantity Takeoff</title>
+    <title>MeasureBook — Drawing Workspace</title>
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        'dark-bg': '#0a0b0f',
-                        'dark-card': '#13141a',
-                        'dark-border': '#1e1f28',
-                        'dark-hover': '#1a1b24',
-                        'brand': '#3b82f6',
-                        'brand-dim': '#1e3a5f',
+                        'bg': '#0a0b0f',
+                        'card': '#13141a',
+                        'border': '#1e1f28',
+                        'hover': '#1a1b24',
+                        'teal': '#14b8a6',
+                        'teal-dim': '#0d9488',
+                        'blue': '#3b82f6',
+                        'blue-dim': '#2563eb',
                         'success': '#22c55e',
                         'warning': '#eab308',
                         'danger': '#ef4444',
+                        'amber': '#f59e0b',
                     }
                 }
             }
         }
     </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
         body { background: #0a0b0f; }
+        .mono { font-family: 'JetBrains Mono', 'SF Mono', 'Courier New', monospace; }
+
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #0a0b0f; }
+        ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #2a2b35; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #3a3b45; }
-        .drop-zone { transition: all 0.2s; }
-        .drop-zone.dragover { border-color: #3b82f6; background: #0d1117; }
+
         .fade-in { animation: fadeIn 0.3s ease-in; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .spinner { border: 2px solid #1e1f28; border-top: 2px solid #3b82f6; border-radius: 50%; width: 20px; height: 20px; animation: spin 0.8s linear infinite; display: inline-block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        .spinner { border: 2px solid #1e1f28; border-top: 2px solid #14b8a6; border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .mono { font-family: 'JetBrains Mono', 'SF Mono', 'Courier New', monospace; }
-        .conf-high { background: rgba(34,197,94,0.15); color: #22c55e; }
-        .conf-medium { background: rgba(234,179,8,0.15); color: #eab308; }
-        .conf-low { background: rgba(239,68,68,0.15); color: #ef4444; }
+
+        .drop-zone { transition: all 0.2s; }
+        .drop-zone.dragover { border-color: #14b8a6; background: rgba(20, 184, 166, 0.05); }
+
+        .conf-high { background: rgba(34,197,94,0.12); color: #22c55e; }
+        .conf-medium { background: rgba(234,179,8,0.12); color: #eab308; }
+        .conf-low { background: rgba(239,68,68,0.12); color: #ef4444; }
+
+        .conf-dot-high { background: #22c55e; }
+        .conf-dot-medium { background: #eab308; }
+        .conf-dot-low { background: #ef4444; }
+
+        .pulse-border {
+            animation: pulseBorder 1.5s ease-in-out infinite;
+        }
+        @keyframes pulseBorder {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.6); }
+            50% { box-shadow: 0 0 0 4px rgba(20, 184, 166, 0); }
+        }
+
+        .row-highlight {
+            background: rgba(20, 184, 166, 0.08) !important;
+        }
+
+        .drawing-container {
+            position: relative;
+            overflow: auto;
+            background: #0a0b0f;
+            background-image:
+                linear-gradient(rgba(30,31,40,0.5) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(30,31,40,0.5) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .annotation-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+
+        .annotation-canvas.clickable {
+            pointer-events: auto;
+        }
+
+        .toggle-btn {
+            transition: all 0.15s;
+        }
+
+        .tool-btn {
+            transition: all 0.15s;
+        }
+        .tool-btn:hover {
+            background: #1a1b24;
+        }
+        .tool-btn.active {
+            background: rgba(20, 184, 166, 0.12);
+            color: #14b8a6;
+        }
+
+        .sheet-pill {
+            transition: all 0.15s;
+        }
+
+        /* Tooltip */
+        [data-tooltip] {
+            position: relative;
+        }
+        [data-tooltip]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: -28px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #13141a;
+            border: 1px solid #1e1f28;
+            color: #9ca3af;
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            z-index: 100;
+        }
+
+        /* Sheet thumbnail in dropdown */
+        .sheet-thumb {
+            transition: all 0.15s;
+        }
+        .sheet-thumb:hover {
+            border-color: #14b8a6;
+        }
+        .sheet-thumb.active {
+            border-color: #14b8a6;
+            box-shadow: 0 0 0 1px #14b8a6;
+        }
     </style>
 </head>
-<body class="text-gray-200 min-h-screen">
+<body class="text-gray-200 min-h-screen overflow-hidden">
 
-<!-- Header -->
-<header class="border-b border-dark-border bg-dark-bg/80 backdrop-blur sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-brand flex items-center justify-center">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+<!-- ============ TOP HEADER BAR ============ -->
+<header id="header-bar" class="border-b border-border bg-bg/95 backdrop-blur sticky top-0 z-50 flex items-center justify-between px-4 h-12 hidden">
+    <!-- Left: Back arrow + document info -->
+    <div class="flex items-center gap-3">
+        <button onclick="resetUI()" class="tool-btn p-1.5 rounded text-gray-400 hover:text-white" data-tooltip="New takeoff">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+        </button>
+        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        <div>
+            <div class="text-sm font-medium text-white leading-tight" id="header-filename">drawing.pdf</div>
+            <div class="text-[11px] text-gray-500 leading-tight" id="header-subtitle">Drawing workspace — 0 open sheets</div>
+        </div>
+    </div>
+    <!-- Right: Sheets, AI reading, Saved, Export -->
+    <div class="flex items-center gap-2">
+        <!-- Sheets dropdown -->
+        <div class="relative">
+            <button id="sheets-btn" onclick="toggleSheetsDropdown()" class="tool-btn px-3 py-1.5 rounded text-sm text-gray-400 flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <rect x="4" y="3" width="13" height="15" rx="1" stroke="currentColor"/>
+                    <rect x="7" y="6" width="13" height="15" rx="1" stroke="currentColor"/>
                 </svg>
-            </div>
-            <div>
-                <h1 class="text-lg font-semibold text-white">Takeoff AI</h1>
-                <p class="text-xs text-gray-500">Multi-Discipline Quantity Takeoff</p>
+                Sheets
+                <span class="text-xs text-gray-600 ml-0.5" id="sheets-count-badge"></span>
+            </button>
+            <div id="sheets-dropdown" class="hidden absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-xl z-50 min-w-[180px]">
+                <div id="sheets-list" class="p-1 max-h-64 overflow-auto"></div>
             </div>
         </div>
-        <div class="flex items-center gap-4 text-sm text-gray-400">
-            <a href="https://github.com/mrshranikjain/universal-takeoff-tool" target="_blank" class="hover:text-white transition-colors flex items-center gap-2">
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.81 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-                GitHub
-            </a>
+        <!-- AI reading pill -->
+        <div id="ai-reading-pill" class="hidden items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber/10 border border-amber/30">
+            <div class="spinner" style="width:10px;height:10px;border-width:1.5px;border-color:#1e1f28;border-top-color:#f59e0b;"></div>
+            <span class="text-xs text-amber font-medium">AI reading</span>
         </div>
+        <!-- Saved indicator -->
+        <div id="saved-indicator" class="hidden items-center gap-1 px-2 py-1 text-xs text-gray-500">
+            <svg class="w-3.5 h-3.5 text-success" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+            Saved
+        </div>
+        <!-- Export button -->
+        <button id="export-btn" onclick="downloadExcel()" class="hidden bg-teal hover:bg-teal-dim text-white px-3 py-1.5 rounded text-sm font-medium transition-colors flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            </svg>
+            Export
+        </button>
     </div>
 </header>
 
-<!-- Main Content -->
-<main class="max-w-7xl mx-auto px-6 py-8">
-
-    <!-- Upload Section (shown when no job) -->
-    <div id="upload-section" class="fade-in">
-        <div class="text-center mb-12 mt-8">
-            <h2 class="text-3xl font-bold text-white mb-3">Drop in the drawing set.</h2>
-            <p class="text-gray-500 text-lg">Any discipline — HVAC, plumbing, electrical, structural, P&ID, fire protection. The engine reads it the way your best estimator would.</p>
-        </div>
-
-        <!-- Waterfall steps -->
-        <div class="grid grid-cols-4 gap-4 mb-12 max-w-4xl mx-auto">
-            <div class="bg-dark-card border border-dark-border rounded-xl p-4 text-center">
-                <div class="text-brand text-xs font-semibold mb-2 mono">LAYER 2</div>
-                <div class="text-sm text-gray-300 font-medium">Text Extraction</div>
-                <div class="text-xs text-gray-600 mt-1">Tags & annotations</div>
-                <div class="text-xs text-success mt-1">High confidence</div>
-            </div>
-            <div class="bg-dark-card border border-dark-border rounded-xl p-4 text-center">
-                <div class="text-brand text-xs font-semibold mb-2 mono">LAYER 3</div>
-                <div class="text-sm text-gray-300 font-medium">Vector Analysis</div>
-                <div class="text-xs text-gray-600 mt-1">CAD color layers</div>
-                <div class="text-xs text-warning mt-1">Medium confidence</div>
-            </div>
-            <div class="bg-dark-card border border-dark-border rounded-xl p-4 text-center">
-                <div class="text-brand text-xs font-semibold mb-2 mono">LAYER 4</div>
-                <div class="text-sm text-gray-300 font-medium">VL Detection</div>
-                <div class="text-xs text-gray-600 mt-1">Unlabeled symbols</div>
-                <div class="text-xs text-danger mt-1">Low confidence</div>
-            </div>
-            <div class="bg-dark-card border border-dark-border rounded-xl p-4 text-center">
-                <div class="text-brand text-xs font-semibold mb-2 mono">LAYER 5</div>
-                <div class="text-sm text-gray-300 font-medium">Parametric Rules</div>
-                <div class="text-xs text-gray-600 mt-1">Standard sizes</div>
-                <div class="text-xs text-gray-500 mt-1">Inference</div>
+<!-- ============ MAIN TOOLBAR ============ -->
+<div id="main-toolbar" class="border-b border-border bg-card hidden flex items-center justify-between px-4 h-10">
+    <!-- Left: Measure, Markup, Edit, Set scale -->
+    <div class="flex items-center gap-1">
+        <div class="relative">
+            <button id="measure-btn" onclick="toggleMeasureMode()" class="tool-btn px-3 py-1.5 rounded text-sm flex items-center gap-1.5 text-teal">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 8v8M8 8v8M4 12h16M4 6h16M4 18h16"/>
+                </svg>
+                Measure
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div id="measure-dropdown" class="hidden absolute left-0 top-full mt-1 bg-card border border-border rounded-lg shadow-xl z-50 min-w-[180px] py-1">
+                <button onclick="setMeasureMode('point')" class="w-full text-left px-3 py-1.5 text-sm text-gray-300 hover:bg-hover flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-teal"></span> Point count</button>
+                <button onclick="setMeasureMode('line')" class="w-full text-left px-3 py-1.5 text-sm text-gray-300 hover:bg-hover flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-blue"></span> Line length (RMT)</button>
+                <button onclick="setMeasureMode('area')" class="w-full text-left px-3 py-1.5 text-sm text-gray-300 hover:bg-hover flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-warning"></span> Area (SQMT)</button>
+                <button onclick="setMeasureMode('off')" class="w-full text-left px-3 py-1.5 text-sm text-gray-500 hover:bg-hover flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-gray-600"></span> Off</button>
             </div>
         </div>
+        <button id="markup-btn" onclick="toggleMarkupMode()" class="tool-btn px-3 py-1.5 rounded text-sm text-gray-400 flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+            </svg>
+            Markup
+        </button>
+        <button id="edit-btn" onclick="toggleEditMode()" class="tool-btn px-3 py-1.5 rounded text-sm text-gray-400 flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+            Edit
+        </button>
+        <div class="relative">
+            <button id="setscale-btn" onclick="toggleSetScaleModal()" class="tool-btn px-3 py-1.5 rounded text-sm text-gray-400 flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
+                </svg>
+                Set scale
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div id="setscale-dropdown" class="hidden absolute left-0 top-full mt-1 bg-card border border-border rounded-lg shadow-xl z-50 min-w-[280px] p-4">
+                <div class="text-sm font-medium text-white mb-3">Calibrate Drawing Scale</div>
+                <p class="text-xs text-gray-500 mb-3">Click two points on the drawing, then enter the real-world distance between them.</p>
+                <div class="space-y-2">
+                    <button onclick="startScaleCalibration()" class="w-full bg-teal hover:bg-teal-dim text-white text-sm py-2 rounded transition-colors">Pick two points on drawing</button>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Distance (mm)</label>
+                        <input id="scale-dist-input" type="number" placeholder="e.g. 4950" class="w-full bg-bg border border-border rounded px-2 py-1.5 text-sm text-gray-200 focus:border-teal focus:outline-none" />
+                    </div>
+                    <button onclick="applyScaleCalibration()" class="w-full bg-blue hover:bg-blue-dim text-white text-sm py-2 rounded transition-colors">Apply Scale</button>
+                    <div id="scale-calib-result" class="text-xs text-gray-500 hidden"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Right: Hide all findings -->
+    <button id="hide-findings-btn" onclick="toggleFindings()" class="toggle-btn px-3 py-1.5 rounded text-sm text-gray-400 flex items-center gap-1.5 border border-border hover:border-danger/30 hover:text-danger">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 18.75c-4.475 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.492 7.492l-3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.475 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+        </svg>
+        <span id="hide-findings-label">Hide all findings</span>
+    </button>
+</div>
 
-        <!-- Drop zone -->
-        <div id="dropzone" class="drop-zone border-2 border-dashed border-dark-border rounded-2xl p-12 text-center cursor-pointer max-w-2xl mx-auto hover:border-brand/50 transition-all" onclick="document.getElementById('file-input').click()">
+<!-- ============ SHEET INFO BAR ============ -->
+<div id="sheet-info-bar" class="border-b border-border bg-card hidden flex items-center justify-between px-4 h-9">
+    <!-- Left: Sheet pill + Scale -->
+    <div class="flex items-center gap-3">
+        <span class="sheet-pill bg-bg border border-border px-2.5 py-1 rounded text-xs text-gray-300 font-medium" id="sheet-pill">Sheet 1</span>
+        <span class="text-xs text-gray-500" id="scale-display">Scale not set</span>
+    </div>
+    <!-- Right: Side by side + Regroup -->
+    <div class="flex items-center gap-2">
+        <button id="side-by-side-btn" onclick="toggleSideBySide()" class="toggle-btn px-2.5 py-1 rounded text-xs text-gray-400 flex items-center gap-1.5 border border-border hover:border-teal/30 hover:text-teal">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="8" height="18" rx="1"/>
+                <rect x="13" y="3" width="8" height="18" rx="1"/>
+            </svg>
+            Side by side
+        </button>
+        <button onclick="regroupData()" class="toggle-btn px-2.5 py-1 rounded text-xs text-gray-400 flex items-center gap-1.5 border border-border hover:border-teal/30 hover:text-teal">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+            Regroup
+        </button>
+    </div>
+</div>
+
+<!-- ============ MAIN WORKSPACE ============ -->
+<div id="workspace" class="hidden flex h-[calc(100vh-0px)]">
+    <!-- Left panel: Drawing viewer -->
+    <div id="drawing-panel" class="flex-1 flex flex-col min-w-0">
+        <!-- Page navigator + zoom controls -->
+        <div class="flex items-center justify-between px-4 py-2 border-b border-border bg-card">
+            <div class="flex items-center gap-2">
+                <!-- 2D/3D toggle -->
+                <div class="flex items-center gap-0.5 bg-bg rounded border border-border p-0.5">
+                    <button id="btn-2d" onclick="setViewMode('2d')" class="px-2 py-0.5 rounded text-xs font-medium bg-teal/15 text-teal">2D</button>
+                    <button id="btn-3d" onclick="setViewMode('3d')" class="px-2 py-0.5 rounded text-xs text-gray-600">3D</button>
+                </div>
+                <!-- Page nav -->
+                <div class="flex items-center gap-1">
+                    <button onclick="prevPage()" class="tool-btn p-1 rounded text-gray-400 hover:text-white">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+                    </button>
+                    <span class="text-xs text-gray-400 px-1 mono" id="page-nav-label">1 / 1</span>
+                    <button onclick="nextPage()" class="tool-btn p-1 rounded text-gray-400 hover:text-white">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+                    </button>
+                </div>
+            </div>
+            <!-- Zoom controls -->
+            <div class="flex items-center gap-2">
+                <button onclick="zoomOut()" class="tool-btn p-1 rounded text-gray-400 hover:text-white" data-tooltip="Zoom out">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/>
+                    </svg>
+                </button>
+                <span class="text-xs text-gray-500 mono w-12 text-center" id="zoom-label">100%</span>
+                <button onclick="zoomIn()" class="tool-btn p-1 rounded text-gray-400 hover:text-white" data-tooltip="Zoom in">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                    </svg>
+                </button>
+                <button onclick="zoomFit()" class="tool-btn p-1 rounded text-gray-400 hover:text-white" data-tooltip="Fit to screen">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m7-5h4m0 0v4m0-4l-5 5m5 11v4m0 0h-4m4 0l-5-5M4 16v4m0 0h4m-4 0l5-5"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <!-- Drawing container -->
+        <div id="drawing-container" class="drawing-container flex-1">
+            <div id="drawing-wrapper" class="relative inline-block">
+                <img id="drawing-img" class="block max-w-none select-none" style="display:none;" />
+                <canvas id="annotation-canvas" class="annotation-canvas"></canvas>
+            </div>
+        </div>
+        <!-- 3D viewer container -->
+        <div id="three-d-container" class="hidden flex-1 flex flex-col bg-bg relative" style="background:#0a0b0f;">
+            <!-- 3D Toolbar -->
+            <div id="three-d-toolbar" class="flex items-center gap-1 px-2 py-1.5 border-b border-border bg-card z-10">
+                <label class="tool-btn px-2.5 py-1 rounded text-xs text-gray-400 cursor-pointer flex items-center gap-1" data-tooltip="Load IFC file">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                    Load IFC
+                    <input type="file" accept=".ifc" class="hidden" onchange="window.load3DFile(this.files[0]); this.value='';" />
+                </label>
+                <label class="tool-btn px-2.5 py-1 rounded text-xs text-gray-400 cursor-pointer flex items-center gap-1" data-tooltip="Load GLB/GLTF file">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                    Load GLB
+                    <input type="file" accept=".glb,.gltf" class="hidden" onchange="window.load3DFile(this.files[0]); this.value='';" />
+                </label>
+                <label class="tool-btn px-2.5 py-1 rounded text-xs text-gray-400 cursor-pointer flex items-center gap-1" data-tooltip="Load OBJ file">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                    Load OBJ
+                    <input type="file" accept=".obj" class="hidden" onchange="window.load3DFile(this.files[0]); this.value='';" />
+                </label>
+                <div class="w-px h-4 bg-border mx-1"></div>
+                <button onclick="window.reset3DView()" class="tool-btn px-2.5 py-1 rounded text-xs text-gray-400 flex items-center gap-1" data-tooltip="Reset camera">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M4 9a8 8 0 0114-3M20 15a8 8 0 01-14 3"/></svg>
+                    Reset
+                </button>
+                <button id="btn-3d-grid" onclick="window.toggle3DGrid()" class="tool-btn px-2.5 py-1 rounded text-xs text-gray-400 flex items-center gap-1" data-tooltip="Toggle grid">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4h16v16H4zM4 12h16M12 4v16"/></svg>
+                    Grid
+                </button>
+                <button id="btn-3d-axes" onclick="window.toggle3DAxes()" class="tool-btn px-2.5 py-1 rounded text-xs text-gray-400 flex items-center gap-1" data-tooltip="Toggle axes">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16M4 12h16M12 4l-3 3M12 4l3 3M4 12l3-3M4 12l3 3"/></svg>
+                    Axes
+                </button>
+                <button id="btn-3d-wireframe" onclick="window.toggle3DWireframe()" class="tool-btn px-2.5 py-1 rounded text-xs text-gray-400 flex items-center gap-1" data-tooltip="Toggle wireframe">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4l16 16M20 4L4 20M4 12h16M12 4v16"/></svg>
+                    Wire
+                </button>
+                <div class="flex-1"></div>
+                <button onclick="setViewMode('2d')" class="tool-btn px-2.5 py-1 rounded text-xs text-gray-400 flex items-center gap-1" data-tooltip="Back to 2D">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    2D
+                </button>
+            </div>
+            <!-- 3D Canvas area -->
+            <div id="three-d-canvas-wrap" class="flex-1 relative overflow-hidden">
+                <!-- Empty state -->
+                <div id="three-d-empty" class="absolute inset-0 flex items-center justify-center z-[1]">
+                    <div class="text-center px-6">
+                        <div class="mb-6 mx-auto" style="width:80px;height:80px;">
+                            <svg viewBox="0 0 80 80" class="w-full h-full">
+                                <path d="M40 8 L68 24 L68 56 L40 72 L12 56 L12 24 Z" fill="none" stroke="#14b8a6" stroke-width="1.5" opacity="0.4"/>
+                                <path d="M40 8 L68 24 L40 40 L12 24 Z" fill="rgba(20,184,166,0.05)" stroke="#14b8a6" stroke-width="1"/>
+                                <path d="M12 24 L12 56 L40 72 L40 40 Z" fill="rgba(59,130,246,0.05)" stroke="#3b82f6" stroke-width="1"/>
+                                <path d="M68 24 L68 56 L40 72 L40 40 Z" fill="rgba(234,179,8,0.05)" stroke="#eab308" stroke-width="1"/>
+                                <line x1="40" y1="8" x2="40" y2="40" stroke="#14b8a6" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.5"/>
+                                <line x1="12" y1="24" x2="40" y2="40" stroke="#14b8a6" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.5"/>
+                                <line x1="68" y1="24" x2="40" y2="40" stroke="#14b8a6" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.5"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-white mb-2">3D Model View</h3>
+                        <p class="text-sm text-gray-500 mb-4">Load an IFC, GLB, or OBJ file to view in 3D</p>
+                        <div class="flex flex-wrap gap-2 justify-center">
+                            <span class="text-[11px] px-2 py-1 bg-card border border-border rounded text-gray-400">.ifc</span>
+                            <span class="text-[11px] px-2 py-1 bg-card border border-border rounded text-gray-400">.glb / .gltf</span>
+                            <span class="text-[11px] px-2 py-1 bg-card border border-border rounded text-gray-400">.obj</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Loading overlay -->
+                <div id="three-d-loading" class="hidden absolute inset-0 z-[5] flex items-center justify-center" style="background:rgba(10,11,15,0.85);">
+                    <div class="text-center">
+                        <div class="spinner mx-auto mb-3" style="width:32px;height:32px;border-width:3px;"></div>
+                        <p id="three-d-loading-text" class="text-sm text-gray-400">Loading...</p>
+                    </div>
+                </div>
+                <!-- Model info overlay -->
+                <div id="three-d-info" class="hidden absolute bottom-3 left-3 z-[3] bg-card/90 backdrop-blur border border-border rounded-lg px-3 py-2 text-xs text-gray-400 pointer-events-none">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span id="three-d-info-format" class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-teal/15 text-teal">IFC</span>
+                        <span id="three-d-info-name" class="text-gray-300 font-medium truncate" style="max-width:200px;">model.ifc</span>
+                    </div>
+                    <div class="flex gap-3 text-gray-500">
+                        <span>Triangles: <span id="three-d-info-tris" class="text-gray-400">0</span></span>
+                        <span>Meshes: <span id="three-d-info-meshes" class="text-gray-400">0</span></span>
+                        <span>Size: <span id="three-d-info-size" class="text-gray-400">0 MB</span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right panel: Data table -->
+    <div id="data-panel" class="w-[440px] border-l border-border bg-card flex flex-col min-w-0">
+        <div class="px-4 py-3 border-b border-border">
+            <h3 class="text-sm font-semibold text-white">Extracted Data</h3>
+            <p class="text-[11px] text-gray-500 mt-0.5" id="data-panel-subtitle">Click a row to locate on drawing</p>
+        </div>
+        <!-- Table -->
+        <div class="flex-1 overflow-auto">
+            <table class="w-full text-xs">
+                <thead class="sticky top-0 bg-card z-10">
+                    <tr class="border-b border-border text-gray-500">
+                        <th class="text-left px-3 py-2 font-medium">S.No</th>
+                        <th class="text-left px-2 py-2 font-medium">Tag</th>
+                        <th class="text-left px-2 py-2 font-medium">Description</th>
+                        <th class="text-right px-2 py-2 font-medium">Qty</th>
+                        <th class="text-center px-2 py-2 font-medium">Unit</th>
+                        <th class="text-left px-2 py-2 font-medium">Spec</th>
+                        <th class="text-center px-2 py-2 font-medium">Conf.</th>
+                    </tr>
+                </thead>
+                <tbody id="data-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ============ UPLOAD STATE ============ -->
+<div id="upload-section" class="fade-in overflow-auto h-screen">
+    <!-- Hero -->
+    <div class="text-center py-12 px-6">
+        <div class="text-[13px] font-semibold tracking-[0.2em] text-teal uppercase mb-3 mono">MeasureBook</div>
+        <h2 class="text-3xl font-bold text-white mb-3">Drop in the drawing set.</h2>
+        <p class="text-gray-500 text-lg max-w-2xl mx-auto">Any discipline — HVAC, plumbing, electrical, structural, P&amp;ID, fire protection. The engine reads it the way your best estimator would.</p>
+    </div>
+
+    <!-- Mode toggle: Single vs Batch -->
+    <div class="flex items-center justify-center gap-2 mb-8">
+        <button id="mode-single" onclick="setUploadMode('single')" class="px-4 py-2 rounded-lg text-sm font-medium bg-teal/15 text-teal border border-teal/30 transition-colors">Single Drawing</button>
+        <button id="mode-batch" onclick="setUploadMode('batch')" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-400 border border-border hover:text-gray-300 transition-colors">Tender Set (Batch)</button>
+    </div>
+
+    <!-- Waterfall steps -->
+    <div class="grid grid-cols-4 gap-4 mb-10 max-w-4xl mx-auto px-6">
+        <div class="bg-card border border-border rounded-xl p-4 text-center">
+            <div class="text-teal text-[10px] font-bold mb-2 mono tracking-wider">LAYER 2</div>
+            <div class="text-sm text-gray-300 font-medium">Text Extraction</div>
+            <div class="text-[11px] text-gray-600 mt-1">Tags &amp; annotations</div>
+            <div class="text-[11px] text-success mt-1 font-medium">High confidence</div>
+        </div>
+        <div class="bg-card border border-border rounded-xl p-4 text-center">
+            <div class="text-teal text-[10px] font-bold mb-2 mono tracking-wider">LAYER 3</div>
+            <div class="text-sm text-gray-300 font-medium">Vector Analysis</div>
+            <div class="text-[11px] text-gray-600 mt-1">CAD color layers</div>
+            <div class="text-[11px] text-warning mt-1 font-medium">Medium confidence</div>
+        </div>
+        <div class="bg-card border border-border rounded-xl p-4 text-center">
+            <div class="text-teal text-[10px] font-bold mb-2 mono tracking-wider">LAYER 4</div>
+            <div class="text-sm text-gray-300 font-medium">VL Detection</div>
+            <div class="text-[11px] text-gray-600 mt-1">Unlabeled symbols</div>
+            <div class="text-[11px] text-danger mt-1 font-medium">Low confidence</div>
+        </div>
+        <div class="bg-card border border-border rounded-xl p-4 text-center">
+            <div class="text-teal text-[10px] font-bold mb-2 mono tracking-wider">LAYER 5</div>
+            <div class="text-sm text-gray-300 font-medium">Parametric Rules</div>
+            <div class="text-[11px] text-gray-600 mt-1">Standard sizes</div>
+            <div class="text-[11px] text-gray-500 mt-1 font-medium">Inference</div>
+        </div>
+    </div>
+
+    <!-- Drop zone (SINGLE mode) -->
+    <div id="single-upload" class="">
+        <div id="dropzone" class="drop-zone border-2 border-dashed border-border rounded-2xl p-10 text-center cursor-pointer max-w-2xl mx-auto hover:border-teal/40 transition-all mb-6" onclick="document.getElementById('file-input').click()">
             <div class="mb-4">
                 <svg class="w-12 h-12 text-gray-600 mx-auto" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
@@ -115,136 +513,210 @@
             </div>
             <p class="text-gray-300 text-lg font-medium mb-2">Drop PDF drawing here</p>
             <p class="text-gray-600 text-sm">or click to browse · PDF only · Multi-page supported</p>
-            <input type="file" id="file-input" accept=".pdf" class="hidden" onchange="handleFileSelect(event)" />
+            <input type="file" id="file-input" accept=".pdf" class="hidden" />
         </div>
+    </div>
 
-        <!-- Options -->
-        <div id="options-section" class="max-w-2xl mx-auto mt-6 hidden">
-            <div class="bg-dark-card border border-dark-border rounded-xl p-6 space-y-4">
-                <div class="flex items-center gap-2 mb-2">
-                    <svg class="w-4 h-4 text-brand" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                    <span class="text-sm font-medium text-gray-300">Analysis Options</span>
+    <!-- Batch drop zone (BATCH mode) -->
+    <div id="batch-upload" class="hidden">
+        <div id="batch-dropzone" class="drop-zone border-2 border-dashed border-border rounded-2xl p-10 text-center cursor-pointer max-w-2xl mx-auto hover:border-teal/40 transition-all mb-6" onclick="document.getElementById('batch-file-input').click()">
+            <div class="mb-4">
+                <svg class="w-12 h-12 text-gray-600 mx-auto" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+            </div>
+            <p class="text-gray-300 text-lg font-medium mb-2">Drop multiple PDF drawings here</p>
+            <p class="text-gray-600 text-sm">Upload an entire tender set — Vol 1-8, all disciplines</p>
+            <input type="file" id="batch-file-input" accept=".pdf" multiple class="hidden" />
+        </div>
+        <!-- Batch file list -->
+        <div id="batch-file-list" class="max-w-2xl mx-auto mb-6 hidden">
+            <div class="bg-card border border-border rounded-xl p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-sm font-medium text-gray-300" id="batch-file-count">0 files selected</span>
+                    <button onclick="clearBatchFiles()" class="text-xs text-gray-500 hover:text-danger">Clear all</button>
                 </div>
-
-                <div>
-                    <label class="block text-xs text-gray-500 mb-1">Discipline</label>
-                    <select id="discipline-select" class="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-sm text-gray-200 focus:border-brand focus:outline-none">
-                        <option value="auto">Auto-detect (recommended)</option>
-                        <option value="hvac">HVAC</option>
-                        <option value="plumbing">Plumbing</option>
-                        <option value="electrical">Electrical</option>
-                        <option value="fire_protection">Fire Protection</option>
-                        <option value="structural">Structural</option>
-                        <option value="civil">Civil / Architectural</option>
-                        <option value="pid">P&ID</option>
-                    </select>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-1">Scale Reference Room (optional)</label>
-                        <input id="scale-room" type="text" placeholder="e.g., AHU ROOM - 04" class="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-sm text-gray-200 focus:border-brand focus:outline-none" />
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-1">Scale Reference Dimension (optional)</label>
-                        <input id="scale-dim" type="text" placeholder="e.g., 4950X7450" class="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-sm text-gray-200 focus:border-brand focus:outline-none" />
-                    </div>
-                </div>
-
-                <label class="flex items-center gap-2 text-sm text-gray-400 cursor-pointer">
-                    <input type="checkbox" id="vl-verify" class="rounded bg-dark-bg border-dark-border text-brand focus:ring-brand" />
-                    Enable VL model verification (slower, detects unlabeled symbols)
-                </label>
-
-                <button id="analyze-btn" onclick="startAnalysis()" class="w-full bg-brand hover:bg-blue-600 text-white font-medium py-3 rounded-lg transition-colors flex items-center justify-center gap-2">
+                <div id="batch-files-container" class="space-y-2 max-h-48 overflow-auto"></div>
+                <button onclick="startBatchAnalysis()" class="w-full mt-4 bg-teal hover:bg-teal-dim text-white font-medium py-3 rounded-lg transition-colors flex items-center justify-center gap-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                    Start Takeoff
+                    Process Tender Set
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Processing Section -->
-    <div id="processing-section" class="hidden fade-in max-w-2xl mx-auto">
-        <div class="bg-dark-card border border-dark-border rounded-2xl p-12 text-center">
-            <div class="spinner mx-auto mb-6" style="width:40px;height:40px;border-width:3px;"></div>
-            <h2 class="text-xl font-semibold text-white mb-2">Analyzing drawing...</h2>
-            <p id="processing-status" class="text-gray-500 text-sm mb-4">Uploading file</p>
-            <div class="flex items-center justify-center gap-2 text-xs text-gray-600">
-                <span class="mono" id="processing-filename"></span>
+    <!-- Options panel -->
+    <div id="options-section" class="max-w-2xl mx-auto px-6 mb-10 hidden">
+        <div class="bg-card border border-border rounded-xl p-6 space-y-4">
+            <div class="flex items-center gap-2 mb-2">
+                <svg class="w-4 h-4 text-teal" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                <span class="text-sm font-medium text-gray-300">Analysis Options</span>
             </div>
-        </div>
-    </div>
-
-    <!-- Results Section -->
-    <div id="results-section" class="hidden fade-in">
-        <!-- Summary bar -->
-        <div class="flex items-center justify-between mb-6">
             <div>
-                <h2 class="text-2xl font-bold text-white" id="results-title">Takeoff Complete</h2>
-                <p class="text-gray-500 text-sm" id="results-subtitle"></p>
+                <label class="block text-xs text-gray-500 mb-1.5">Discipline</label>
+                <select id="discipline-select" class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-gray-200 focus:border-teal focus:outline-none">
+                    <option value="auto">Auto-detect (recommended)</option>
+                    <option value="hvac">HVAC</option>
+                    <option value="plumbing">Plumbing</option>
+                    <option value="electrical">Electrical</option>
+                    <option value="fire_protection">Fire Protection</option>
+                    <option value="structural">Structural</option>
+                    <option value="civil">Civil / Architectural</option>
+                    <option value="pid">P&amp;ID</option>
+                </select>
             </div>
-            <div class="flex gap-3">
-                <button onclick="downloadExcel()" class="bg-brand hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                    Download Excel
-                </button>
-                <button onclick="resetUI()" class="bg-dark-card hover:bg-dark-hover border border-dark-border text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                    New Takeoff
-                </button>
-            </div>
-        </div>
-
-        <!-- Stats cards -->
-        <div id="stats-cards" class="grid grid-cols-4 gap-4 mb-6"></div>
-
-        <!-- Results table -->
-        <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden mb-6">
-            <div class="px-6 py-4 border-b border-dark-border flex items-center justify-between">
-                <h3 class="font-semibold text-white">Quantity Takeoff</h3>
-                <div class="flex items-center gap-3 text-xs">
-                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-success"></span><span class="text-gray-500">High</span></span>
-                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-warning"></span><span class="text-gray-500">Medium</span></span>
-                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-danger"></span><span class="text-gray-500">Low</span></span>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1.5">Scale Reference Room (optional)</label>
+                    <input id="scale-room" type="text" placeholder="e.g., AHU ROOM - 04" class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-gray-200 focus:border-teal focus:outline-none" />
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1.5">Scale Reference Dimension (optional)</label>
+                    <input id="scale-dim" type="text" placeholder="e.g., 4950X7450" class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-gray-200 focus:border-teal focus:outline-none" />
                 </div>
             </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-dark-border text-gray-500 text-xs">
-                            <th class="text-left px-6 py-3 font-medium">S.NO</th>
-                            <th class="text-left px-3 py-3 font-medium">TAG</th>
-                            <th class="text-left px-3 py-3 font-medium">DESCRIPTION</th>
-                            <th class="text-right px-3 py-3 font-medium">QTY</th>
-                            <th class="text-center px-3 py-3 font-medium">UNIT</th>
-                            <th class="text-left px-3 py-3 font-medium">SPECIFICATION</th>
-                            <th class="text-center px-3 py-3 font-medium">CONFIDENCE</th>
-                        </tr>
-                    </thead>
-                    <tbody id="results-tbody"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Vector layers -->
-        <div class="bg-dark-card border border-dark-border rounded-xl p-6 mb-6">
-            <h3 class="font-semibold text-white mb-4">Vector Graphics Analysis</h3>
-            <div id="vector-layers" class="grid grid-cols-2 gap-3"></div>
+            <label class="flex items-center gap-2 text-sm text-gray-400 cursor-pointer">
+                <input type="checkbox" id="vl-verify" class="rounded bg-bg border-border text-teal focus:ring-teal" />
+                Enable VL model verification (slower, detects unlabeled symbols)
+            </label>
+            <button id="analyze-btn" onclick="startAnalysis()" class="w-full bg-teal hover:bg-teal-dim text-white font-medium py-3 rounded-lg transition-colors flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                Start Takeoff
+            </button>
         </div>
     </div>
-</main>
+</div>
+
+<!-- ============ PROCESSING OVERLAY ============ -->
+<div id="processing-overlay" class="hidden fixed inset-0 z-50 bg-bg/90 backdrop-blur flex items-center justify-center">
+    <div class="text-center">
+        <div class="spinner mx-auto mb-6" style="width:48px;height:48px;border-width:3px;border-top-color:#14b8a6;"></div>
+        <h2 class="text-xl font-semibold text-white mb-2">AI is reading your drawing</h2>
+        <p id="processing-status" class="text-gray-500 text-sm mb-3">Uploading file...</p>
+        <p class="text-xs text-gray-700 mono" id="processing-filename"></p>
+    </div>
+</div>
+
+<!-- ============ BATCH PROCESSING OVERLAY ============ -->
+<div id="batch-overlay" class="hidden fixed inset-0 z-50 bg-bg/90 backdrop-blur flex items-center justify-center">
+    <div class="text-center max-w-md w-full px-6">
+        <div class="spinner mx-auto mb-6" style="width:48px;height:48px;border-width:3px;border-top-color:#14b8a6;"></div>
+        <h2 class="text-xl font-semibold text-white mb-2">Processing tender set</h2>
+        <p id="batch-progress-text" class="text-gray-500 text-sm mb-4">Starting...</p>
+        
+        <!-- Progress bar -->
+        <div class="bg-bg border border-border rounded-full h-2 mb-4 overflow-hidden">
+            <div id="batch-progress-bar" class="bg-teal h-full rounded-full transition-all duration-300" style="width:0%"></div>
+        </div>
+        
+        <div class="flex items-center justify-between text-xs text-gray-600">
+            <span id="batch-progress-count">0 / 0</span>
+            <span id="batch-progress-file" class="mono truncate ml-2"></span>
+        </div>
+    </div>
+</div>
+
+<!-- ============ BATCH DASHBOARD (replaces workspace for batch results) ============ -->
+<div id="batch-dashboard" class="hidden fixed inset-0 z-40 overflow-auto bg-bg">
+    <!-- Batch header -->
+    <div class="border-b border-border bg-card sticky top-0 z-50 px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <button onclick="resetBatchUI()" class="tool-btn p-1.5 rounded text-gray-400 hover:text-white">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            </button>
+            <h2 class="text-sm font-semibold text-white">Tender Set Takeoff</h2>
+            <span id="batch-summary-badge" class="text-xs text-gray-500"></span>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="downloadBatchExcel()" class="bg-teal hover:bg-teal-dim text-white px-3 py-1.5 rounded text-sm font-medium flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Export Unified BOQ
+            </button>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-6 py-8">
+        
+        <!-- Summary stats -->
+        <div id="batch-stats" class="grid grid-cols-5 gap-4 mb-8"></div>
+
+        
+        <!-- Discipline breakdown -->
+        <div class="mb-8">
+            <h3 class="text-sm font-semibold text-white mb-4">By Discipline</h3>
+            <div id="batch-disciplines" class="grid grid-cols-2 gap-4"></div>
+        </div>
+
+        <!-- File list with thumbnails -->
+        <div class="mb-8">
+            <h3 class="text-sm font-semibold text-white mb-4">Drawings in Set</h3>
+            <div id="batch-thumbnails" class="grid grid-cols-6 gap-3"></div>
+        </div>
+
+        <!-- Unified BOQ table -->
+        <div class="mb-8">
+            <h3 class="text-sm font-semibold text-white mb-4">Unified BOQ (All Trades)</h3>
+            <div id="batch-boq-tabs" class="flex gap-2 mb-4 flex-wrap"></div>
+            <div class="bg-card border border-border rounded-xl overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs">
+                        <thead class="sticky top-0 bg-card z-10">
+                            <tr class="border-b border-border text-gray-500">
+                                <th class="text-left px-4 py-2 font-medium">S.No</th>
+                                <th class="text-left px-3 py-2 font-medium">Tag</th>
+                                <th class="text-left px-3 py-2 font-medium">Description</th>
+                                <th class="text-right px-3 py-2 font-medium">Qty</th>
+                                <th class="text-center px-3 py-2 font-medium">Unit</th>
+                                <th class="text-left px-3 py-2 font-medium">Sources</th>
+                            </tr>
+                        </thead>
+                        <tbody id="batch-boq-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ SHEETS DROPDOWN CLICK-AWAY ============ -->
+<div id="sheets-overlay" class="hidden fixed inset-0 z-40" onclick="closeSheetsDropdown()"></div>
 
 <script>
+// ==================== STATE ====================
 let selectedFile = null;
 let currentJobId = null;
+let jobResults = null;
+let currentPage = 1;
+let totalPages = 1;
+let sideBySide = true;
+let findingsVisible = true;
+let zoom = 1.0;
+let naturalWidth = 0;
+let naturalHeight = 0;
+let annotations = []; // [{x, y, w, h, label, confidence, rowIdx}]
+let highlightedRowIdx = null;
 
+// Batch state
+let uploadMode = 'single';
+let batchFiles = [];
+let batchJobId = null;
+let batchResults = null;
+let batchActiveTab = 'all';
+
+// ==================== FILE SELECTION ====================
 function handleFileSelect(event) {
     const file = event.target.files[0];
     if (file && file.name.endsWith('.pdf')) {
         selectedFile = file;
-        document.getElementById('dropzone').classList.add('border-brand');
-        document.getElementById('dropzone').innerHTML = `
-            <svg class="w-12 h-12 text-brand mx-auto mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        const dz = document.getElementById('dropzone');
+        dz.classList.add('border-teal');
+        dz.innerHTML = `
+            <svg class="w-12 h-12 text-teal mx-auto mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             <p class="text-gray-200 text-lg font-medium mb-1">${file.name}</p>
             <p class="text-gray-600 text-sm">${(file.size / 1024 / 1024).toFixed(2)} MB · Click to change</p>
         `;
@@ -252,7 +724,7 @@ function handleFileSelect(event) {
     }
 }
 
-// Drag and drop
+// ==================== DRAG & DROP ====================
 const dropzone = document.getElementById('dropzone');
 ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => {
     dropzone.addEventListener(e, (ev) => { ev.preventDefault(); ev.stopPropagation(); });
@@ -268,6 +740,7 @@ dropzone.addEventListener('drop', (ev) => {
     }
 });
 
+// ==================== ANALYSIS ====================
 async function startAnalysis() {
     if (!selectedFile) return;
 
@@ -283,9 +756,8 @@ async function startAnalysis() {
     if (scaleDim) formData.append('scale_ref_dim', scaleDim);
     formData.append('vl_verify', vlVerify);
 
-    // Show processing
     document.getElementById('upload-section').classList.add('hidden');
-    document.getElementById('processing-section').classList.remove('hidden');
+    document.getElementById('processing-overlay').classList.remove('hidden');
     document.getElementById('processing-filename').textContent = selectedFile.name;
     document.getElementById('processing-status').textContent = 'Uploading file...';
 
@@ -306,10 +778,11 @@ async function pollStatus(jobId) {
             const data = await resp.json();
 
             if (data.status === 'complete') {
-                document.getElementById('processing-section').classList.add('hidden');
-                showResults(data);
+                document.getElementById('processing-overlay').classList.add('hidden');
+                enterWorkspace(data);
             } else if (data.status === 'error') {
                 document.getElementById('processing-status').textContent = 'Error: ' + (data.error || 'Unknown error');
+                document.getElementById('processing-status').classList.add('text-danger');
             } else {
                 document.getElementById('processing-status').textContent = 'Extracting quantities...';
                 setTimeout(poll, 2000);
@@ -321,169 +794,1812 @@ async function pollStatus(jobId) {
     poll();
 }
 
-function showResults(data) {
-    document.getElementById('results-section').classList.remove('hidden');
+// ==================== WORKSPACE ====================
+function enterWorkspace(data) {
+    jobResults = data;
     const results = data.results || [];
-    if (!results.length) return;
+    totalPages = results.length;
+    currentPage = 1;
 
-    const r = results[0];
-    document.getElementById('results-title').textContent = `${r.discipline_name} Takeoff Complete`;
-    document.getElementById('results-subtitle').textContent = `Scale: 1:${r.scale} · ${r.texts_count} text annotations · ${results.length} page(s)`;
+    // Show workspace elements
+    document.getElementById('upload-section').classList.add('hidden');
+    document.getElementById('header-bar').classList.remove('hidden');
+    document.getElementById('header-bar').classList.add('flex');
+    document.getElementById('main-toolbar').classList.remove('hidden');
+    document.getElementById('main-toolbar').classList.add('flex');
+    document.getElementById('sheet-info-bar').classList.remove('hidden');
+    document.getElementById('sheet-info-bar').classList.add('flex');
+    document.getElementById('workspace').classList.remove('hidden');
+    document.getElementById('workspace').classList.add('flex');
+    document.getElementById('export-btn').classList.remove('hidden');
+    document.getElementById('export-btn').classList.add('flex');
+    document.getElementById('saved-indicator').classList.remove('hidden');
+    document.getElementById('saved-indicator').classList.add('flex');
 
-    // Stats cards
-    const stats = document.getElementById('stats-cards');
-    const measurements = r.measurements || {};
-    const components = r.components || {};
+    // Header info
+    document.getElementById('header-filename').textContent = data.filename || 'drawing.pdf';
+    document.getElementById('header-subtitle').textContent = `Drawing workspace — ${totalPages} open sheet${totalPages > 1 ? 's' : ''}`;
+    document.getElementById('sheets-count-badge').textContent = totalPages;
 
-    let highCount = 0, medCount = 0, lowCount = 0;
-    // Count components as high confidence
-    for (const [k, v] of Object.entries(components)) {
-        if (k === 'room_dimensions' || k === 'rooms') continue;
-        if (typeof v === 'object' && v !== null) {
-            if (v.count) highCount++;
-            else if (!v.type) { for (const vv of Object.values(v)) { if (vv > 0) highCount++; } }
+    // Build sheets dropdown
+    buildSheetsDropdown(results);
+
+    // Load first page
+    loadPage(currentPage);
+
+    // Build data table
+    buildDataTable(results[0]);
+
+    // Update scale display
+    updateScaleDisplay();
+}
+
+function buildSheetsDropdown(results) {
+    const list = document.getElementById('sheets-list');
+    list.innerHTML = results.map((r, i) => {
+        const pageNum = r.page;
+        const isActive = pageNum === currentPage;
+        return `
+            <div class="sheet-thumb ${isActive ? 'active' : ''} flex items-center gap-2 p-2 rounded cursor-pointer border border-border hover:bg-hover" onclick="loadPage(${pageNum})">
+                <div class="w-10 h-12 bg-bg border border-border rounded flex items-center justify-center">
+                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                </div>
+                <div>
+                    <div class="text-sm text-gray-300">Sheet ${pageNum}</div>
+                    <div class="text-[10px] text-gray-600">${r.discipline_name || ''}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function toggleSheetsDropdown() {
+    const dd = document.getElementById('sheets-dropdown');
+    const ov = document.getElementById('sheets-overlay');
+    dd.classList.toggle('hidden');
+    ov.classList.toggle('hidden');
+}
+
+function closeSheetsDropdown() {
+    document.getElementById('sheets-dropdown').classList.add('hidden');
+    document.getElementById('sheets-overlay').classList.add('hidden');
+}
+
+// ==================== PAGE LOADING ====================
+async function loadPage(pageNum) {
+    currentPage = pageNum;
+    closeSheetsDropdown();
+
+    // Update sheet pill
+    document.getElementById('sheet-pill').textContent = `Sheet ${pageNum}`;
+    document.getElementById('page-nav-label').textContent = `${pageNum} / ${totalPages}`;
+
+    // Update sheets dropdown active state
+    if (jobResults) {
+        buildSheetsDropdown(jobResults.results);
+    }
+
+    // Load image
+    const img = document.getElementById('drawing-img');
+    img.style.display = 'none';
+
+    img.onload = () => {
+        naturalWidth = img.naturalWidth;
+        naturalHeight = img.naturalHeight;
+        img.style.display = 'block';
+        applyZoom();
+        drawAnnotations();
+    };
+
+    img.src = `/api/jobs/${currentJobId}/image/${pageNum}`;
+
+    // Update scale display
+    updateScaleDisplay();
+
+    // Rebuild data table for this page
+    if (jobResults) {
+        const pageResult = jobResults.results.find(r => r.page === pageNum);
+        if (pageResult) {
+            buildDataTable(pageResult);
         }
     }
-    for (const [k, v] of Object.entries(measurements)) {
-        if (typeof v === 'number' && v !== 0) {
-            if (k.includes('rmt') || k.includes('sqmt')) medCount++;
-            else lowCount++;
+}
+
+function updateScaleDisplay() {
+    if (jobResults) {
+        const pageResult = jobResults.results.find(r => r.page === currentPage);
+        if (pageResult && pageResult.scale) {
+            document.getElementById('scale-display').textContent = `Scale: 1:${pageResult.scale}`;
+        } else {
+            document.getElementById('scale-display').textContent = 'Scale not set';
         }
     }
+}
 
-    const ductLen = measurements.duct_length_rmt || 0;
-    const pipeLen = (measurements.blue_pipe_total_rmt || measurements.blue_pipe_single_rmt || 0);
-    const totalItems = highCount + medCount + lowCount;
+function prevPage() {
+    if (currentPage > 1) loadPage(currentPage - 1);
+}
 
-    stats.innerHTML = `
-        <div class="bg-dark-card border border-dark-border rounded-xl p-4">
-            <div class="text-2xl font-bold text-white">${totalItems}</div>
-            <div class="text-xs text-gray-500 mt-1">Total Items</div>
-        </div>
-        <div class="bg-dark-card border border-dark-border rounded-xl p-4">
-            <div class="text-2xl font-bold text-white">${ductLen > 0 ? ductLen.toFixed(1) + ' RMT' : '—'}</div>
-            <div class="text-xs text-gray-500 mt-1">Ductwork Length</div>
-        </div>
-        <div class="bg-dark-card border border-dark-border rounded-xl p-4">
-            <div class="text-2xl font-bold text-white">${pipeLen > 0 ? pipeLen.toFixed(1) + ' RMT' : '—'}</div>
-            <div class="text-xs text-gray-500 mt-1">Pipe Length</div>
-        </div>
-        <div class="bg-dark-card border border-dark-border rounded-xl p-4">
-            <div class="text-2xl font-bold text-white">1:${r.scale}</div>
-            <div class="text-xs text-gray-500 mt-1">Drawing Scale</div>
-        </div>
-    `;
+function nextPage() {
+    if (currentPage < totalPages) loadPage(currentPage + 1);
+}
 
-    // Results table
-    const tbody = document.getElementById('results-tbody');
-    let sno = 1;
-    let rows = '';
+// ==================== ZOOM ====================
+function applyZoom() {
+    const img = document.getElementById('drawing-img');
+    const canvas = document.getElementById('annotation-canvas');
+    const wrapper = document.getElementById('drawing-wrapper');
 
-    // Components (high confidence)
+    const w = naturalWidth * zoom;
+    const h = naturalHeight * zoom;
+
+    img.style.width = w + 'px';
+    img.style.height = h + 'px';
+
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    canvas.width = w;
+    canvas.height = h;
+
+    document.getElementById('zoom-label').textContent = Math.round(zoom * 100) + '%';
+    drawAnnotations();
+}
+
+function zoomIn() {
+    zoom = Math.min(zoom + 0.25, 4);
+    applyZoom();
+}
+
+function zoomOut() {
+    zoom = Math.max(zoom - 0.25, 0.25);
+    applyZoom();
+}
+
+function zoomFit() {
+    const container = document.getElementById('drawing-container');
+    zoom = Math.min(
+        (container.clientWidth - 40) / naturalWidth,
+        (container.clientHeight - 40) / naturalHeight
+    );
+    zoom = Math.max(zoom, 0.1);
+    applyZoom();
+}
+
+// ==================== ANNOTATIONS ====================
+function collectAnnotations(pageResult) {
+    const annos = [];
+    if (!pageResult) return annos;
+
+    const components = pageResult.components || {};
+
     for (const [tag, data] of Object.entries(components)) {
         if (tag === 'room_dimensions' || tag === 'rooms') continue;
-        if (typeof data === 'object' && data !== null) {
-            if (data.count) {
-                rows += rowHTML(sno++, tag, data.type || tag, data.count, data.unit || 'No', '', 'High');
-            } else if (!data.type) {
-                for (const [variant, count] of Object.entries(data)) {
-                    if (count > 0) rows += rowHTML(sno++, variant, `${tag} variant`, count, 'No', '', 'High');
-                }
+        if (typeof data !== 'object' || data === null) continue;
+
+        // Components with locations
+        if (data.locations && Array.isArray(data.locations)) {
+            for (const loc of data.locations) {
+                annos.push({
+                    x: loc.x * 2,
+                    y: loc.y * 2,
+                    w: 60,
+                    h: 30,
+                    label: loc.text || tag,
+                    tag: tag,
+                    confidence: 'High',
+                    rowIdx: annos.length
+                });
+            }
+        }
+        // Components with count but no locations — assign confidence High
+        if (data.count && !data.locations) {
+            // No spatial data, skip annotation
+        }
+    }
+
+    // Rooms with coordinates
+    const rooms = components.rooms || [];
+    for (const room of rooms) {
+        if (room.x !== undefined && room.y !== undefined) {
+            annos.push({
+                x: room.x * 2,
+                y: room.y * 2,
+                w: 100,
+                h: 40,
+                label: room.name || 'Room',
+                tag: 'ROOM',
+                confidence: 'High',
+                rowIdx: annos.length
+            });
+        }
+    }
+
+    // Room dimensions with coordinates
+    const roomDims = components.room_dimensions || [];
+    for (const rd of roomDims) {
+        if (rd.x !== undefined && rd.y !== undefined) {
+            annos.push({
+                x: rd.x * 2,
+                y: rd.y * 2,
+                w: 80,
+                h: 25,
+                label: rd.text || rd.dimension || '',
+                tag: 'DIM',
+                confidence: 'High',
+                rowIdx: annos.length
+            });
+        }
+    }
+
+    return annos;
+}
+
+function drawAnnotations() {
+    const canvas = document.getElementById('annotation-canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (!findingsVisible || !jobResults) return;
+
+    const pageResult = jobResults.results.find(r => r.page === currentPage);
+    if (!pageResult) return;
+
+    annotations = collectAnnotations(pageResult);
+
+    for (const anno of annotations) {
+        const x = anno.x * zoom;
+        const y = anno.y * zoom;
+        const w = anno.w * zoom;
+        const h = anno.h * zoom;
+
+        const isHighlighted = anno.rowIdx === highlightedRowIdx;
+        const confColor = anno.confidence === 'High' ? '#22c55e' : anno.confidence === 'Medium' ? '#eab308' : '#ef4444';
+
+        if (isHighlighted) {
+            // Pulsing highlight
+            ctx.strokeStyle = '#14b8a6';
+            ctx.lineWidth = 3;
+            ctx.shadowColor = 'rgba(20, 184, 166, 0.6)';
+            ctx.shadowBlur = 15;
+            ctx.strokeRect(x - 2, y - 2, w + 4, h + 4);
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = 'rgba(20, 184, 166, 0.12)';
+            ctx.fillRect(x, y, w, h);
+        } else {
+            // Normal annotation
+            ctx.strokeStyle = confColor;
+            ctx.lineWidth = 1.5;
+            ctx.fillStyle = confColor + '15'; // hex alpha
+            ctx.fillRect(x, y, w, h);
+            ctx.strokeRect(x, y, w, h);
+
+            // Label background
+            if (anno.label && zoom > 0.5) {
+                ctx.font = '11px Inter, sans-serif';
+                const textW = ctx.measureText(anno.label).width;
+                ctx.fillStyle = 'rgba(10, 11, 15, 0.85)';
+                ctx.fillRect(x, y - 16, textW + 8, 14);
+                ctx.fillStyle = confColor;
+                ctx.fillText(anno.label, x + 4, y - 5);
+            }
+        }
+    }
+}
+
+function toggleFindings() {
+    findingsVisible = !findingsVisible;
+    document.getElementById('hide-findings-label').textContent = findingsVisible ? 'Hide all findings' : 'Show all findings';
+    drawAnnotations();
+}
+
+// ==================== DATA TABLE ====================
+function buildDataTable(pageResult) {
+    const tbody = document.getElementById('data-tbody');
+    if (!pageResult) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-gray-600 py-8">No data for this sheet</td></tr>';
+        return;
+    }
+
+    const components = pageResult.components || {};
+    const measurements = pageResult.measurements || {};
+    const rooms = components.rooms || [];
+    const roomDims = components.room_dimensions || [];
+
+    let sno = 1;
+    let rows = '';
+    let rowIdx = 0;
+
+    // Section header: Components
+    rows += `<tr class="border-b border-border bg-hover/20"><td colspan="7" class="px-3 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Detected Components</td></tr>`;
+
+    // Components with locations (clickable)
+    for (const [tag, data] of Object.entries(components)) {
+        if (tag === 'room_dimensions' || tag === 'rooms') continue;
+        if (typeof data !== 'object' || data === null) continue;
+
+        if (data.locations && Array.isArray(data.locations)) {
+            for (const loc of data.locations) {
+                rows += dataRow(sno++, tag, loc.text || tag, 1, data.unit || 'No', data.type || '', 'High', rowIdx++);
+            }
+        }
+        if (data.count) {
+            rows += dataRow(sno++, tag, data.type || tag, data.count, data.unit || 'No', '', 'High', null);
+        }
+        if (!data.type && !data.locations && !data.count) {
+            for (const [variant, count] of Object.entries(data)) {
+                if (count > 0) rows += dataRow(sno++, variant, `${tag} variant`, count, 'No', '', 'High', null);
             }
         }
     }
 
-    // Measurements (medium/low confidence)
-    for (const [key, val] of Object.entries(measurements)) {
-        if (typeof val === 'number' && val !== 0) {
-            let unit = 'RMT';
-            if (key.includes('sqmt') || key.includes('sm_')) unit = 'SQMT';
-            else if (key.includes('symbols') || key.includes('segments') || key.includes('paths')) unit = 'No';
-            const conf = (key.includes('rmt') || key.includes('sqmt')) ? 'Medium' : 'Low';
-            const displayVal = typeof val === 'number' ? val.toFixed(1) : val;
-            rows += rowHTML(sno++, key, key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()), displayVal, unit, `Scale 1:${r.scale}`, conf);
+    // Measurements
+    const hasMeasurements = Object.values(measurements).some(v => typeof v === 'number' && v !== 0);
+    if (hasMeasurements) {
+        rows += `<tr class="border-b border-border bg-hover/20"><td colspan="7" class="px-3 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Measurements</td></tr>`;
+        for (const [key, val] of Object.entries(measurements)) {
+            if (typeof val === 'number' && val !== 0) {
+                let unit = 'RMT';
+                if (key.includes('sqmt') || key.includes('sm_')) unit = 'SQMT';
+                else if (key.includes('symbols') || key.includes('segments') || key.includes('paths') || key.includes('filled')) unit = 'No';
+                const conf = (key.includes('rmt') || key.includes('sqmt')) ? 'Medium' : 'Low';
+                const displayVal = typeof val === 'number' ? val.toFixed(1) : val;
+                rows += dataRow(sno++, key, key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()), displayVal, unit, `Scale 1:${pageResult.scale}`, conf, null);
+            }
         }
     }
 
     // Rooms
-    const rooms = components.rooms || [];
     if (rooms.length) {
-        rows += `<tr class="border-b border-dark-border bg-dark-hover/30"><td colspan="7" class="px-6 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Rooms</td></tr>`;
+        rows += `<tr class="border-b border-border bg-hover/20"><td colspan="7" class="px-3 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Rooms</td></tr>`;
         for (const room of rooms) {
-            rows += rowHTML(sno++, '', room.name, 1, 'Room', room.dimension || '', 'High');
+            const rIdx = (room.x !== undefined && room.y !== undefined) ? rowIdx++ : null;
+            rows += dataRow(sno++, '', room.name, 1, 'Room', room.dimension || '', 'High', rIdx);
         }
+    }
+
+    // Room dimensions
+    if (roomDims.length) {
+        rows += `<tr class="border-b border-border bg-hover/20"><td colspan="7" class="px-3 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Room Dimensions</td></tr>`;
+        for (const rd of roomDims) {
+            const rIdx = (rd.x !== undefined && rd.y !== undefined) ? rowIdx++ : null;
+            rows += dataRow(sno++, '', rd.text || rd.dimension || '', 1, 'Dim', `W:${rd.w_mm || '?'}mm H:${rd.h_mm || '?'}mm`, 'High', rIdx);
+        }
+    }
+
+    // Vector summary — shown as diagnostic info, not BOQ quantity
+    const vectorData = pageResult.vector_summary || {};
+    if (Object.keys(vectorData).length) {
+        rows += `<tr class="border-b border-border bg-hover/20"><td colspan="7" class="px-3 py-1.5 text-[10px] font-bold text-gray-600 uppercase tracking-wider">Drawing Diagnostics (not BOQ items)</td></tr>`;
+        for (const [layer, stats] of Object.entries(vectorData)) {
+            rows += `<tr class="border-b border-border/30 text-gray-600">
+                <td class="px-3 py-2">${sno++}</td>
+                <td class="px-2 py-2 mono text-[11px]">${layer.replace(/_/g, ' ')}</td>
+                <td class="px-2 py-2">${stats.paths} paths, ${stats.lines} lines, ${stats.filled} filled</td>
+                <td class="px-2 py-2 text-right">—</td>
+                <td class="px-2 py-2 text-center">—</td>
+                <td class="px-2 py-2">Layer statistics only</td>
+                <td class="px-2 py-2 text-center"><span class="text-[10px] text-gray-700">diag</span></td>
+            </tr>`;
+        }
+    }
+
+    // Title block info
+    const tb = pageResult.title_block;
+    if (tb && (tb.project || tb.drawing_title)) {
+        rows += `<tr class="border-b border-border bg-hover/20"><td colspan="7" class="px-3 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Title Block</td></tr>`;
+        if (tb.project) rows += dataRow(sno++, 'PROJECT', tb.project, 1, '—', '', 'High', null);
+        if (tb.drawing_title) rows += dataRow(sno++, 'TITLE', tb.drawing_title, 1, '—', '', 'High', null);
     }
 
     tbody.innerHTML = rows;
 
-    // Vector layers
-    const vlDiv = document.getElementById('vector-layers');
-    const vectorData = r.vector_summary || {};
-    let layerHTML = '';
-    for (const [layer, stats] of Object.entries(vectorData)) {
-        const isHVAC = ['magenta_duct', 'blue_pipe', 'green_supply', 'cyan_piping', 'orange_equipment'].includes(layer);
-        if (!isHVAC && stats.paths < 100) continue;
-        const colorMap = {
-            'magenta_duct': '#ff00ff', 'blue_pipe': '#0066ff', 'green_supply': '#00ff00',
-            'cyan_piping': '#00ffff', 'orange_equipment': '#ff7f00', 'red_fire': '#ff0000',
-            'gray_architectural': '#808080', 'black_structural': '#ffffff',
-        };
-        const color = colorMap[layer] || '#666';
-        layerHTML += `
-            <div class="flex items-center justify-between bg-dark-bg rounded-lg px-4 py-3 border border-dark-border">
-                <div class="flex items-center gap-3">
-                    <span class="w-3 h-3 rounded-full" style="background:${color}"></span>
-                    <span class="text-sm text-gray-300 mono">${layer}</span>
-                </div>
-                <div class="flex gap-4 text-xs text-gray-500">
-                    <span>${stats.paths} paths</span>
-                    <span>${stats.lines} lines</span>
-                    <span>${stats.filled} filled</span>
-                </div>
-            </div>
-        `;
-    }
-    vlDiv.innerHTML = layerHTML || '<p class="text-gray-600 text-sm">No significant vector layers found</p>';
+    // Attach click handlers for rows with rowIdx
+    tbody.querySelectorAll('tr[data-row-idx]').forEach(tr => {
+        tr.addEventListener('click', () => {
+            const idx = parseInt(tr.dataset.rowIdx);
+            highlightRow(idx);
+        });
+        tr.style.cursor = 'pointer';
+    });
 }
 
-function rowHTML(sno, tag, desc, qty, unit, spec, conf) {
+function dataRow(sno, tag, desc, qty, unit, spec, conf, rowIdx) {
     const confClass = conf === 'High' ? 'conf-high' : conf === 'Medium' ? 'conf-medium' : 'conf-low';
+    const dotClass = conf === 'High' ? 'conf-dot-high' : conf === 'Medium' ? 'conf-dot-medium' : 'conf-dot-low';
+    const rowAttr = rowIdx !== null ? `data-row-idx="${rowIdx}"` : '';
+    const hoverCls = rowIdx !== null ? 'hover:bg-hover/40 cursor-pointer' : '';
     return `
-        <tr class="border-b border-dark-border hover:bg-dark-hover/30 transition-colors">
-            <td class="px-6 py-3 text-gray-600 text-xs">${sno}</td>
-            <td class="px-3 py-3 text-gray-300 font-medium mono text-xs">${tag}</td>
-            <td class="px-3 py-3 text-gray-400">${desc}</td>
-            <td class="px-3 py-3 text-right text-white font-medium">${qty}</td>
-            <td class="px-3 py-3 text-center text-gray-500 text-xs">${unit}</td>
-            <td class="px-3 py-3 text-gray-600 text-xs">${spec}</td>
-            <td class="px-3 py-3 text-center"><span class="${confClass} text-xs px-2 py-1 rounded font-medium">${conf}</span></td>
+        <tr class="border-b border-border/50 ${hoverCls} transition-colors" ${rowAttr}>
+            <td class="px-3 py-2 text-gray-600">${sno}</td>
+            <td class="px-2 py-2 text-gray-300 font-medium mono text-[11px]">${tag || '—'}</td>
+            <td class="px-2 py-2 text-gray-400">${desc}</td>
+            <td class="px-2 py-2 text-right text-white font-medium">${qty}</td>
+            <td class="px-2 py-2 text-center text-gray-500 text-[11px]">${unit}</td>
+            <td class="px-2 py-2 text-gray-600 text-[11px]">${spec}</td>
+            <td class="px-2 py-2 text-center">
+                <span class="inline-flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full ${dotClass}"></span>
+                    <span class="${confClass} text-[10px] px-1.5 py-0.5 rounded font-medium">${conf}</span>
+                </span>
+            </td>
         </tr>
     `;
 }
 
+function highlightRow(rowIdx) {
+    // Remove previous highlight
+    document.querySelectorAll('#data-tbody tr.row-highlight').forEach(tr => tr.classList.remove('row-highlight'));
+    highlightedRowIdx = null;
+
+    // Find the annotation
+    const pageResult = jobResults.results.find(r => r.page === currentPage);
+    const annos = collectAnnotations(pageResult);
+    const anno = annos.find(a => a.rowIdx === rowIdx);
+    if (!anno) return;
+
+    highlightedRowIdx = rowIdx;
+
+    // Highlight table row
+    const rowEl = document.querySelector(`#data-tbody tr[data-row-idx="${rowIdx}"]`);
+    if (rowEl) rowEl.classList.add('row-highlight');
+
+    // Scroll drawing to annotation
+    const container = document.getElementById('drawing-container');
+    const annoX = anno.x * zoom;
+    const annoY = anno.y * zoom;
+    const annoW = anno.w * zoom;
+    const annoH = anno.h * zoom;
+
+    container.scrollTo({
+        left: Math.max(0, annoX - container.clientWidth / 2 + annoW / 2),
+        top: Math.max(0, annoY - container.clientHeight / 2 + annoH / 2),
+        behavior: 'smooth'
+    });
+
+    // Redraw annotations with highlight
+    drawAnnotations();
+
+    // Pulse effect
+    const canvas = document.getElementById('annotation-canvas');
+    canvas.classList.add('pulse-border');
+    setTimeout(() => canvas.classList.remove('pulse-border'), 3000);
+}
+
+// ==================== SIDE BY SIDE ====================
+function toggleSideBySide() {
+    sideBySide = !sideBySide;
+    const dataPanel = document.getElementById('data-panel');
+    const drawingPanel = document.getElementById('drawing-panel');
+    const btn = document.getElementById('side-by-side-btn');
+
+    if (sideBySide) {
+        dataPanel.classList.remove('hidden');
+        drawingPanel.classList.remove('w-full');
+        btn.classList.add('text-teal', 'border-teal/30');
+        btn.classList.remove('text-gray-400', 'border-border');
+    } else {
+        dataPanel.classList.add('hidden');
+        drawingPanel.classList.add('w-full');
+        btn.classList.remove('text-teal', 'border-teal/30');
+        btn.classList.add('text-gray-400', 'border-border');
+    }
+
+    // Re-fit after layout change
+    setTimeout(() => {
+        if (naturalWidth > 0) zoomFit();
+    }, 50);
+}
+
+// ==================== EXPORT ====================
 async function downloadExcel() {
     if (!currentJobId) return;
     window.location.href = `/api/jobs/${currentJobId}/download`;
 }
 
+// ==================== RESET ====================
 function resetUI() {
     selectedFile = null;
     currentJobId = null;
+    jobResults = null;
+    currentPage = 1;
+    totalPages = 1;
+    zoom = 1.0;
+    annotations = [];
+    highlightedRowIdx = null;
+    findingsVisible = true;
+    sideBySide = true;
+
+    // Hide workspace
+    document.getElementById('header-bar').classList.add('hidden');
+    document.getElementById('header-bar').classList.remove('flex');
+    document.getElementById('main-toolbar').classList.add('hidden');
+    document.getElementById('main-toolbar').classList.remove('flex');
+    document.getElementById('sheet-info-bar').classList.add('hidden');
+    document.getElementById('sheet-info-bar').classList.remove('flex');
+    document.getElementById('workspace').classList.add('hidden');
+    document.getElementById('workspace').classList.remove('flex');
+    document.getElementById('export-btn').classList.add('hidden');
+    document.getElementById('export-btn').classList.remove('flex');
+    document.getElementById('saved-indicator').classList.add('hidden');
+    document.getElementById('saved-indicator').classList.remove('flex');
+    document.getElementById('processing-overlay').classList.add('hidden');
+
+    // Show upload
     document.getElementById('upload-section').classList.remove('hidden');
-    document.getElementById('results-section').classList.add('hidden');
-    document.getElementById('processing-section').classList.add('hidden');
-    document.getElementById('options-section').classList.add('hidden');
-    document.getElementById('dropzone').classList.remove('border-brand');
-    document.getElementById('dropzone').innerHTML = `
-        <div class="mb-4"><svg class="w-12 h-12 text-gray-600 mx-auto" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg></div>
+
+    // Reset dropzone
+    const dz = document.getElementById('dropzone');
+    dz.classList.remove('border-teal');
+    dz.innerHTML = `
+        <div class="mb-4">
+            <svg class="w-12 h-12 text-gray-600 mx-auto" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            </svg>
+        </div>
         <p class="text-gray-300 text-lg font-medium mb-2">Drop PDF drawing here</p>
         <p class="text-gray-600 text-sm">or click to browse · PDF only · Multi-page supported</p>
-        <input type="file" id="file-input" accept=".pdf" class="hidden" onchange="handleFileSelect(event)" />
+        <input type="file" id="file-input" accept=".pdf" class="hidden" />
     `;
-    // Re-attach events
-    const dz = document.getElementById('dropzone');
-    dz.onclick = () => document.getElementById('file-input').click();
+    document.getElementById('options-section').classList.add('hidden');
+    document.getElementById('file-input').addEventListener('change', handleFileSelect);
+
+    // Re-attach dropzone events
+    const newDz = document.getElementById('dropzone');
+    newDz.onclick = () => document.getElementById('file-input').click();
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => {
+        newDz.addEventListener(e, (ev) => { ev.preventDefault(); ev.stopPropagation(); });
+    });
+    ['dragenter', 'dragover'].forEach(e => newDz.addEventListener(e, () => newDz.classList.add('dragover')));
+    ['dragleave', 'drop'].forEach(e => newDz.addEventListener(e, () => newDz.classList.remove('dragover')));
+    newDz.addEventListener('drop', (ev) => {
+        const file = ev.dataTransfer.files[0];
+        if (file && file.name.endsWith('.pdf')) {
+            selectedFile = file;
+            document.getElementById('file-input').files = ev.dataTransfer.files;
+            handleFileSelect({ target: { files: ev.dataTransfer.files } });
+        }
+    });
 }
+
+// ==================== VIEW MODE (2D / 3D) ====================
+function setViewMode(mode) {
+    const btn2d = document.getElementById('btn-2d');
+    const btn3d = document.getElementById('btn-3d');
+    const drawingContainer = document.getElementById('drawing-container');
+    const threeDContainer = document.getElementById('three-d-container');
+    
+    if (mode === '3d') {
+        btn2d.classList.remove('bg-teal/15', 'text-teal');
+        btn2d.classList.add('text-gray-600');
+        btn3d.classList.add('bg-teal/15', 'text-teal');
+        btn3d.classList.remove('text-gray-600');
+        drawingContainer.classList.add('hidden');
+        threeDContainer.classList.remove('hidden');
+        threeDContainer.classList.add('flex');
+        if (window.initViewer3D) window.initViewer3D();
+    } else {
+        btn2d.classList.add('bg-teal/15', 'text-teal');
+        btn2d.classList.remove('text-gray-600');
+        btn3d.classList.remove('bg-teal/15', 'text-teal');
+        btn3d.classList.add('text-gray-600');
+        drawingContainer.classList.remove('hidden');
+        threeDContainer.classList.add('hidden');
+        threeDContainer.classList.remove('flex');
+    }
+}
+
+// ==================== BATCH MODE ====================
+function setUploadMode(mode) {
+    uploadMode = mode;
+    const singleBtn = document.getElementById('mode-single');
+    const batchBtn = document.getElementById('mode-batch');
+    const singleUpload = document.getElementById('single-upload');
+    const batchUpload = document.getElementById('batch-upload');
+    
+    if (mode === 'batch') {
+        batchBtn.classList.add('bg-teal/15', 'text-teal', 'border-teal/30');
+        batchBtn.classList.remove('text-gray-400', 'border-border');
+        singleBtn.classList.remove('bg-teal/15', 'text-teal', 'border-teal/30');
+        singleBtn.classList.add('text-gray-400', 'border-border');
+        singleUpload.classList.add('hidden');
+        batchUpload.classList.remove('hidden');
+    } else {
+        singleBtn.classList.add('bg-teal/15', 'text-teal', 'border-teal/30');
+        singleBtn.classList.remove('text-gray-400', 'border-border');
+        batchBtn.classList.remove('bg-teal/15', 'text-teal', 'border-teal/30');
+        batchBtn.classList.add('text-gray-400', 'border-border');
+        singleUpload.classList.remove('hidden');
+        batchUpload.classList.add('hidden');
+    }
+}
+
+// Batch file selection
+document.getElementById('batch-file-input').addEventListener('change', (e) => {
+    handleBatchFiles(e.target.files);
+});
+
+const batchDropzone = document.getElementById('batch-dropzone');
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => {
+    batchDropzone.addEventListener(e, (ev) => { ev.preventDefault(); ev.stopPropagation(); });
+});
+['dragenter', 'dragover'].forEach(e => batchDropzone.addEventListener(e, () => batchDropzone.classList.add('dragover')));
+['dragleave', 'drop'].forEach(e => batchDropzone.addEventListener(e, () => batchDropzone.classList.remove('dragover')));
+batchDropzone.addEventListener('drop', (ev) => {
+    const files = ev.dataTransfer.files;
+    const pdfFiles = Array.from(files).filter(f => f.name.endsWith('.pdf'));
+    if (pdfFiles.length > 0) handleBatchFiles(pdfFiles);
+});
+
+function handleBatchFiles(files) {
+    batchFiles = Array.from(files).filter(f => f.name.endsWith('.pdf'));
+    const listEl = document.getElementById('batch-file-list');
+    const container = document.getElementById('batch-files-container');
+    const countEl = document.getElementById('batch-file-count');
+    
+    if (batchFiles.length === 0) {
+        listEl.classList.add('hidden');
+        return;
+    }
+    
+    listEl.classList.remove('hidden');
+    countEl.textContent = `${batchFiles.length} file${batchFiles.length > 1 ? 's' : ''} selected`;
+    
+    container.innerHTML = batchFiles.map((f, i) => `
+        <div class="flex items-center justify-between bg-bg border border-border rounded-lg px-3 py-2">
+            <div class="flex items-center gap-2 min-w-0">
+                <svg class="w-4 h-4 text-gray-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span class="text-sm text-gray-300 truncate">${f.name}</span>
+                <span class="text-xs text-gray-600 flex-shrink-0">${(f.size/1024/1024).toFixed(1)} MB</span>
+            </div>
+            <button onclick="removeBatchFile(${i})" class="text-gray-600 hover:text-danger flex-shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+    `).join('');
+}
+
+function removeBatchFile(idx) {
+    batchFiles.splice(idx, 1);
+    handleBatchFiles(batchFiles);
+}
+
+function clearBatchFiles() {
+    batchFiles = [];
+    document.getElementById('batch-file-input').value = '';
+    document.getElementById('batch-file-list').classList.add('hidden');
+}
+
+async function startBatchAnalysis() {
+    if (batchFiles.length === 0) return;
+    
+    document.getElementById('upload-section').classList.add('hidden');
+    document.getElementById('batch-overlay').classList.remove('hidden');
+    document.getElementById('batch-progress-text').textContent = 'Uploading files...';
+    document.getElementById('batch-progress-bar').style.width = '0%';
+    document.getElementById('batch-progress-count').textContent = `0 / ${batchFiles.length}`;
+    
+    const formData = new FormData();
+    for (const f of batchFiles) {
+        formData.append('files', f);
+    }
+    
+    try {
+        const resp = await fetch('/api/analyze-batch', { method: 'POST', body: formData });
+        const data = await resp.json();
+        batchJobId = data.batch_job_id;
+        pollBatchStatus(data.batch_job_id);
+    } catch (err) {
+        document.getElementById('batch-progress-text').textContent = 'Error: ' + err.message;
+    }
+}
+
+async function pollBatchStatus(jobId) {
+    const poll = async () => {
+        try {
+            const resp = await fetch(`/api/batch/${jobId}`);
+            const data = await resp.json();
+            
+            if (data.status === 'complete') {
+                document.getElementById('batch-overlay').classList.add('hidden');
+                showBatchDashboard(data);
+            } else if (data.status === 'error') {
+                document.getElementById('batch-progress-text').textContent = 'Error: ' + (data.error || 'Unknown');
+            } else {
+                // Update progress
+                const pct = data.total_files > 0 ? (data.processed / data.total_files) * 100 : 0;
+                document.getElementById('batch-progress-bar').style.width = pct + '%';
+                document.getElementById('batch-progress-text').textContent = data.progress_message || 'Processing...';
+                document.getElementById('batch-progress-count').textContent = `${data.processed} / ${data.total_files}`;
+                document.getElementById('batch-progress-file').textContent = data.current_file || '';
+                setTimeout(poll, 2000);
+            }
+        } catch (err) {
+            document.getElementById('batch-progress-text').textContent = 'Error: ' + err.message;
+        }
+    };
+    poll();
+}
+
+function showBatchDashboard(data) {
+    batchResults = data;
+    document.getElementById('batch-dashboard').classList.remove('hidden');
+    
+    const summary = data.summary;
+    document.getElementById('batch-summary-badge').textContent = 
+        `${summary.successful}/${summary.total_files} files · ${summary.total_pages} pages · ${summary.disciplines_found.length} disciplines`;
+    
+    // Stats cards
+    const statsEl = document.getElementById('batch-stats');
+    const stats = [
+        { label: 'Files', value: summary.successful + '/' + summary.total_files, color: 'text-white' },
+        { label: 'Pages', value: summary.total_pages, color: 'text-teal' },
+        { label: 'Disciplines', value: summary.disciplines_found.length, color: 'text-blue' },
+        { label: 'Component Types', value: Object.values(summary.by_discipline).reduce((s,d) => s + d.component_types, 0), color: 'text-warning' },
+        { label: 'Total Items', value: Object.values(summary.by_discipline).reduce((s,d) => s + d.total_components, 0), color: 'text-success' },
+    ];
+    statsEl.innerHTML = stats.map(s => `
+        <div class="bg-card border border-border rounded-xl p-4">
+            <div class="text-2xl font-bold ${s.color}">${s.value}</div>
+            <div class="text-xs text-gray-500 mt-1">${s.label}</div>
+        </div>
+    `).join('');
+    
+    // Discipline cards
+    const discEl = document.getElementById('batch-disciplines');
+    discEl.innerHTML = Object.entries(summary.by_discipline).map(([key, d]) => {
+        const colors = {
+            hvac: 'bg-teal/10 border-teal/30 text-teal',
+            plumbing: 'bg-blue/10 border-blue/30 text-blue',
+            electrical: 'bg-warning/10 border-warning/30 text-warning',
+            fire_protection: 'bg-danger/10 border-danger/30 text-danger',
+            structural: 'bg-gray-500/10 border-gray-500/30 text-gray-400',
+            civil: 'bg-purple/10 border-purple/30 text-purple-400',
+            pid: 'bg-indigo/10 border-indigo/30 text-indigo-400',
+        };
+        const cls = colors[key] || 'bg-teal/10 border-teal/30 text-teal';
+        return `
+            <div class="bg-card border border-border rounded-xl p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-sm font-medium ${cls.split(' ').pop()}">${d.name}</span>
+                    <span class="text-xs px-2 py-0.5 rounded-full ${cls}">${d.files} files</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div><div class="text-lg font-bold text-white">${d.pages}</div><div class="text-[10px] text-gray-600">pages</div></div>
+                    <div><div class="text-lg font-bold text-white">${d.component_types}</div><div class="text-[10px] text-gray-600">types</div></div>
+                    <div><div class="text-lg font-bold text-white">${d.total_components}</div><div class="text-[10px] text-gray-600">items</div></div>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    // Thumbnails
+    const thumbEl = document.getElementById('batch-thumbnails');
+    thumbEl.innerHTML = data.files.map(f => {
+        if (f.status !== 'complete') {
+            return `
+                <div class="bg-card border border-danger/30 rounded-lg p-3 text-center">
+                    <div class="w-full h-24 bg-bg rounded mb-2 flex items-center justify-center">
+                        <span class="text-xs text-danger">Error</span>
+                    </div>
+                    <div class="text-xs text-gray-500 truncate">${f.filename}</div>
+                </div>
+            `;
+        }
+        const firstPage = f.results[0];
+        return `
+            <div class="bg-card border border-border rounded-lg p-2 hover:border-teal/30 transition-colors cursor-pointer" onclick="viewBatchFile('${f.filename}')">
+                <img src="${firstPage.thumb_url}" class="w-full h-24 object-contain bg-bg rounded mb-2" loading="lazy" />
+                <div class="text-xs text-gray-400 truncate mb-1">${f.filename}</div>
+                <div class="flex items-center justify-between">
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-teal/10 text-teal">${f.discipline_name}</span>
+                    <span class="text-[10px] text-gray-600">${f.pages}p</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    // BOQ tabs
+    const tabsEl = document.getElementById('batch-boq-tabs');
+    const disciplines = Object.keys(data.unified_boq);
+    batchActiveTab = disciplines[0] || 'all';
+    tabsEl.innerHTML = disciplines.map(d => {
+        const dd = data.unified_boq[d];
+        const active = d === batchActiveTab;
+        return `<button onclick="setBatchTab('${d}')" class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${active ? 'bg-teal/15 text-teal border border-teal/30' : 'text-gray-400 border border-border hover:text-gray-300'}">${dd.discipline_name}</button>`;
+    }).join('');
+    
+    renderBatchBOQ(data.unified_boq);
+}
+
+function setBatchTab(disc) {
+    batchActiveTab = disc;
+    // Update tab styles
+    document.querySelectorAll('#batch-boq-tabs button').forEach((btn, i) => {
+        const discKey = Object.keys(batchResults.unified_boq)[i];
+        if (discKey === disc) {
+            btn.classList.add('bg-teal/15', 'text-teal', 'border-teal/30');
+            btn.classList.remove('text-gray-400', 'border-border');
+        } else {
+            btn.classList.remove('bg-teal/15', 'text-teal', 'border-teal/30');
+            btn.classList.add('text-gray-400', 'border-border');
+        }
+    });
+    renderBatchBOQ(batchResults.unified_boq);
+}
+
+function renderBatchBOQ(unifiedBoq) {
+    const tbody = document.getElementById('batch-boq-tbody');
+    const data = unifiedBoq[batchActiveTab];
+    if (!data) { tbody.innerHTML = ''; return; }
+    
+    let sno = 1;
+    let rows = '';
+    
+    // Components
+    rows += '<tr class="border-b border-border bg-hover/20"><td colspan="6" class="px-4 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Components</td></tr>';
+    for (const c of data.components.sort((a,b) => b.count - a.count)) {
+        const sources = c.sources.slice(0, 3).join('; ') + (c.sources.length > 3 ? ` +${c.sources.length-3} more` : '');
+        rows += `<tr class="border-b border-border/50 hover:bg-hover/30">
+            <td class="px-4 py-2 text-gray-600">${sno++}</td>
+            <td class="px-3 py-2 text-gray-300 font-medium mono text-[11px]">${c.tag}</td>
+            <td class="px-3 py-2 text-gray-400">${c.type}</td>
+            <td class="px-3 py-2 text-right text-white font-medium">${c.count}</td>
+            <td class="px-3 py-2 text-center text-gray-500 text-[11px]">${c.unit}</td>
+            <td class="px-3 py-2 text-gray-600 text-[10px]">${sources}</td>
+        </tr>`;
+    }
+    
+    // Measurements
+    rows += '<tr class="border-b border-border bg-hover/20"><td colspan="6" class="px-4 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Measurements</td></tr>';
+    for (const m of data.measurements.sort((a,b) => b.value - a.value)) {
+        const sources = m.sources.slice(0, 3).join('; ') + (m.sources.length > 3 ? ` +${m.sources.length-3} more` : '');
+        rows += `<tr class="border-b border-border/50 hover:bg-hover/30">
+            <td class="px-4 py-2 text-gray-600">${sno++}</td>
+            <td class="px-3 py-2 text-gray-300 font-medium mono text-[11px]">${m.key.replace(/_/g,' ').slice(0,20)}</td>
+            <td class="px-3 py-2 text-gray-400">${m.key.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase())}</td>
+            <td class="px-3 py-2 text-right text-white font-medium">${m.value.toFixed(1)}</td>
+            <td class="px-3 py-2 text-center text-gray-500 text-[11px]">${m.unit}</td>
+            <td class="px-3 py-2 text-gray-600 text-[10px]">${sources}</td>
+        </tr>`;
+    }
+    
+    // Rooms
+    if (data.rooms.length > 0) {
+        rows += '<tr class="border-b border-border bg-hover/20"><td colspan="6" class="px-4 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Rooms</td></tr>';
+        for (const r of data.rooms) {
+            rows += `<tr class="border-b border-border/50">
+                <td class="px-4 py-2 text-gray-600">${sno++}</td>
+                <td class="px-3 py-2"></td>
+                <td class="px-3 py-2 text-gray-300">${r.name}</td>
+                <td class="px-3 py-2 text-right text-white">1</td>
+                <td class="px-3 py-2 text-center text-gray-500 text-[11px]">Room</td>
+                <td class="px-3 py-2 text-gray-600 text-[10px]">${r.source} · ${r.dimension}</td>
+            </tr>`;
+        }
+    }
+    
+    tbody.innerHTML = rows;
+}
+
+function viewBatchFile(filename) {
+    // Find the file in batch results and open it in single view mode
+    if (!batchResults) return;
+    const fileData = batchResults.files.find(f => f.filename === filename);
+    if (!fileData || fileData.status !== 'complete') return;
+    
+    // Hide batch dashboard, show workspace with this file's results
+    document.getElementById('batch-dashboard').classList.add('hidden');
+    
+    // Simulate entering workspace with this file
+    jobResults = { filename: fileData.filename, results: fileData.results };
+    totalPages = fileData.results.length;
+    currentPage = 1;
+    
+    // Show workspace
+    document.getElementById('header-bar').classList.remove('hidden');
+    document.getElementById('header-bar').classList.add('flex');
+    document.getElementById('main-toolbar').classList.remove('hidden');
+    document.getElementById('main-toolbar').classList.add('flex');
+    document.getElementById('sheet-info-bar').classList.remove('hidden');
+    document.getElementById('sheet-info-bar').classList.add('flex');
+    document.getElementById('workspace').classList.remove('hidden');
+    document.getElementById('workspace').classList.add('flex');
+    document.getElementById('export-btn').classList.remove('hidden');
+    document.getElementById('export-btn').classList.add('flex');
+    document.getElementById('saved-indicator').classList.remove('hidden');
+    document.getElementById('saved-indicator').classList.add('flex');
+    
+    document.getElementById('header-filename').textContent = fileData.filename;
+    document.getElementById('header-subtitle').textContent = `Drawing workspace — ${totalPages} sheet${totalPages > 1 ? 's' : ''} · from tender set`;
+    document.getElementById('sheets-count-badge').textContent = totalPages;
+    
+    buildSheetsDropdown(fileData.results);
+    loadPage(currentPage);
+    buildDataTable(fileData.results[0]);
+    updateScaleDisplay();
+}
+
+function downloadBatchExcel() {
+    if (batchJobId) {
+        window.location.href = `/api/batch/${batchJobId}/download`;
+    }
+}
+
+function resetBatchUI() {
+    document.getElementById('batch-dashboard').classList.add('hidden');
+    document.getElementById('upload-section').classList.remove('hidden');
+    batchFiles = [];
+    batchJobId = null;
+    batchResults = null;
+    clearBatchFiles();
+    setUploadMode('batch');
+}
+
+// ==================== KEYBOARD SHORTCUTS ====================
+document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    if (!jobResults) return;
+
+    if (e.key === 'ArrowLeft' && currentPage > 1) prevPage();
+    if (e.key === 'ArrowRight' && currentPage < totalPages) nextPage();
+    if (e.key === '+' || e.key === '=') zoomIn();
+    if (e.key === '-') zoomOut();
+    if (e.key === '0') zoomFit();
+    if (e.key === 'h' || e.key === 'H') toggleFindings();
+    if (e.key === 's' || e.key === 'S') toggleSideBySide();
+});
+
+// ==================== MEASURE MODE ====================
+let measureMode = 'off'; // off, point, line, area
+let measurePoints = [];
+let measureResults = [];
+
+function toggleMeasureMode() {
+    const dd = document.getElementById('measure-dropdown');
+    dd.classList.toggle('hidden');
+}
+
+function setMeasureMode(mode) {
+    measureMode = mode;
+    measurePoints = [];
+    document.getElementById('measure-dropdown').classList.add('hidden');
+    
+    const btn = document.getElementById('measure-btn');
+    const canvas = document.getElementById('annotation-canvas');
+    
+    if (mode === 'off') {
+        btn.classList.remove('text-teal');
+        btn.classList.add('text-gray-400');
+        canvas.classList.remove('clickable');
+        canvas.style.cursor = 'default';
+    } else {
+        btn.classList.add('text-teal');
+        btn.classList.remove('text-gray-400');
+        canvas.classList.add('clickable');
+        canvas.style.cursor = 'crosshair';
+    }
+    
+    drawAnnotations();
+    // Draw measurement overlay
+    drawMeasureOverlay();
+}
+
+function drawMeasureOverlay() {
+    const canvas = document.getElementById('annotation-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Draw existing measurement points and lines
+    for (const mp of measurePoints) {
+        const x = mp.x * zoom;
+        const y = mp.y * zoom;
+        ctx.strokeStyle = '#14b8a6';
+        ctx.lineWidth = 2;
+        ctx.fillStyle = '#14b8a6';
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    if (measureMode === 'line' && measurePoints.length >= 2) {
+        const p1 = measurePoints[measurePoints.length - 2];
+        const p2 = measurePoints[measurePoints.length - 1];
+        const x1 = p1.x * zoom, y1 = p1.y * zoom;
+        const x2 = p2.x * zoom, y2 = p2.y * zoom;
+        ctx.strokeStyle = '#3b82f6';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        // Display length
+        const distPx = Math.sqrt((x2-x1)**2 + (y2-y1)**2);
+        const distMm = distPx / zoom / 2 * (jobResults?.results?.find(r => r.page === currentPage)?.scale || 100) * (420.1 / 1191.0);
+        const midX = (x1 + x2) / 2;
+        const midY = (y1 + y2) / 2;
+        ctx.fillStyle = 'rgba(10,11,15,0.9)';
+        const label = `${distMm.toFixed(0)} mm`;
+        ctx.font = '12px JetBrains Mono, monospace';
+        const tw = ctx.measureText(label).width;
+        ctx.fillRect(midX - tw/2 - 4, midY - 18, tw + 8, 16);
+        ctx.fillStyle = '#3b82f6';
+        ctx.fillText(label, midX - tw/2, midY - 6);
+    }
+    
+    if (measureMode === 'area' && measurePoints.length >= 3) {
+        ctx.strokeStyle = '#eab308';
+        ctx.lineWidth = 2;
+        ctx.fillStyle = 'rgba(234, 179, 8, 0.1)';
+        ctx.beginPath();
+        ctx.moveTo(measurePoints[0].x * zoom, measurePoints[0].y * zoom);
+        for (let i = 1; i < measurePoints.length; i++) {
+            ctx.lineTo(measurePoints[i].x * zoom, measurePoints[i].y * zoom);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        
+        // Calculate area using shoelace formula
+        let area = 0;
+        for (let i = 0; i < measurePoints.length; i++) {
+        const j = (i + 1) % measurePoints.length;
+            area += measurePoints[i].x * measurePoints[j].y;
+            area -= measurePoints[j].x * measurePoints[i].y;
+        }
+        area = Math.abs(area / 2);
+        const scale = jobResults?.results?.find(r => r.page === currentPage)?.scale || 100;
+        const areaSqmm = area / 4 * scale * scale * (420.1 / 1191.0) ** 2;
+        const cx = measurePoints.reduce((s,p) => s + p.x, 0) / measurePoints.length * zoom;
+        const cy = measurePoints.reduce((s,p) => s + p.y, 0) / measurePoints.length * zoom;
+        const label = `${(areaSqmm / 1e6).toFixed(2)} m²`;
+        ctx.fillStyle = 'rgba(10,11,15,0.9)';
+        ctx.font = '12px JetBrains Mono, monospace';
+        const tw = ctx.measureText(label).width;
+        ctx.fillRect(cx - tw/2 - 4, cy - 8, tw + 8, 16);
+        ctx.fillStyle = '#eab308';
+        ctx.fillText(label, cx - tw/2, cy + 4);
+    }
+    
+    if (measureMode === 'point') {
+        // Show count
+        ctx.fillStyle = 'rgba(10,11,15,0.9)';
+        ctx.font = '12px JetBrains Mono, monospace';
+        const label = `Count: ${measurePoints.length}`;
+        ctx.fillRect(10, 10, ctx.measureText(label).width + 12, 22);
+        ctx.fillStyle = '#14b8a6';
+        ctx.fillText(label, 16, 25);
+    }
+}
+
+// ==================== MARKUP MODE ====================
+let markupMode = false;
+let markupShapes = []; // [{type: 'rect', x, y, w, h, color}, {type: 'text', x, y, text}]
+
+function toggleMarkupMode() {
+    markupMode = !markupMode;
+    const btn = document.getElementById('markup-btn');
+    const canvas = document.getElementById('annotation-canvas');
+    
+    if (markupMode) {
+        btn.classList.add('text-teal');
+        btn.classList.remove('text-gray-400');
+        canvas.classList.add('clickable');
+        canvas.style.cursor = 'crosshair';
+        // Disable measure mode
+        if (measureMode !== 'off') setMeasureMode('off');
+    } else {
+        btn.classList.remove('text-teal');
+        btn.classList.add('text-gray-400');
+        canvas.classList.remove('clickable');
+        canvas.style.cursor = 'default';
+    }
+    drawAnnotations();
+    drawMarkupOverlay();
+}
+
+function drawMarkupOverlay() {
+    const canvas = document.getElementById('annotation-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    for (const shape of markupShapes) {
+        if (shape.type === 'rect') {
+            ctx.strokeStyle = shape.color || '#14b8a6';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([4, 4]);
+            ctx.strokeRect(shape.x * zoom, shape.y * zoom, shape.w * zoom, shape.h * zoom);
+            ctx.setLineDash([]);
+        } else if (shape.type === 'text') {
+            ctx.fillStyle = shape.color || '#14b8a6';
+            ctx.font = 'bold 13px Inter, sans-serif';
+            ctx.fillText(shape.text, shape.x * zoom, shape.y * zoom);
+        }
+    }
+}
+
+// ==================== EDIT MODE ====================
+let editMode = false;
+let edits = {}; // { rowIdx: { tag, desc, qty, unit, spec } }
+
+function toggleEditMode() {
+    editMode = !editMode;
+    const btn = document.getElementById('edit-btn');
+    
+    if (editMode) {
+        btn.classList.add('text-teal');
+        btn.classList.remove('text-gray-400');
+        // Make table cells editable
+        document.querySelectorAll('#data-tbody tr[data-row-idx]').forEach(tr => {
+            const cells = tr.querySelectorAll('td');
+            if (cells.length >= 7) {
+                // Tag (col 1), Description (col 2), Qty (col 3), Unit (col 4), Spec (col 5)
+                [1, 2, 3, 4, 5].forEach(colIdx => {
+                    const td = cells[colIdx];
+                    td.contentEditable = 'true';
+                    td.classList.add('editable-cell');
+                    td.style.background = 'rgba(20, 184, 166, 0.03)';
+                    td.addEventListener('blur', () => {
+                        td.style.background = '';
+                    });
+                    td.addEventListener('focus', () => {
+                        td.style.background = 'rgba(20, 184, 166, 0.1)';
+                    });
+                });
+            }
+        });
+    } else {
+        btn.classList.remove('text-teal');
+        btn.classList.add('text-gray-400');
+        document.querySelectorAll('#data-tbody td').forEach(td => {
+            td.contentEditable = 'false';
+            td.classList.remove('editable-cell');
+            td.style.background = '';
+        });
+    }
+}
+
+// ==================== SET SCALE MODE ====================
+let scaleCalibrating = false;
+let scalePoints = [];
+
+function toggleSetScaleModal() {
+    const dd = document.getElementById('setscale-dropdown');
+    dd.classList.toggle('hidden');
+}
+
+function startScaleCalibration() {
+    scaleCalibrating = true;
+    scalePoints = [];
+    document.getElementById('setscale-dropdown').classList.add('hidden');
+    const canvas = document.getElementById('annotation-canvas');
+    canvas.classList.add('clickable');
+    canvas.style.cursor = 'crosshair';
+    showStatusBanner('Click two points on the drawing to set scale...', 'amber');
+}
+
+function applyScaleCalibration() {
+    const distMm = parseFloat(document.getElementById('scale-dist-input').value);
+    if (!distMm || scalePoints.length < 2) {
+        showStatusBanner('Need two clicked points and a distance value', 'red');
+        return;
+    }
+    
+    const p1 = scalePoints[0];
+    const p2 = scalePoints[1];
+    const distPx = Math.sqrt((p2.x - p1.x)**2 + (p2.y - p1.y)**2);
+    const ptToMm = 420.1 / 1191.0;
+    const newScale = distMm / (distPx / 2 * ptToMm); // /2 because image is 2x render
+    
+    // Update display
+    document.getElementById('scale-display').textContent = `Scale: 1:${Math.round(newScale)}`;
+    document.getElementById('scale-calib-result').classList.remove('hidden');
+    document.getElementById('scale-calib-result').textContent = `Scale set to 1:${Math.round(newScale)} (${distPx.toFixed(1)}px = ${distMm}mm)`;
+    document.getElementById('scale-calib-result').classList.add('text-success');
+    
+    // Update job results
+    if (jobResults) {
+        const pageResult = jobResults.results.find(r => r.page === currentPage);
+        if (pageResult) {
+            pageResult.scale = Math.round(newScale);
+            pageResult.scale_info = `Manual calibration: ${distMm}mm over ${distPx.toFixed(1)}px`;
+        }
+    }
+    
+    scaleCalibrating = false;
+    scalePoints = [];
+    const canvas = document.getElementById('annotation-canvas');
+    canvas.classList.remove('clickable');
+    canvas.style.cursor = 'default';
+    showStatusBanner(`Scale calibrated: 1:${Math.round(newScale)}`, 'green');
+    setTimeout(() => hideStatusBanner(), 3000);
+    
+    // Rebuild table with new scale in spec column
+    if (jobResults) {
+        const pageResult = jobResults.results.find(r => r.page === currentPage);
+        if (pageResult) buildDataTable(pageResult);
+    }
+}
+
+// ==================== STATUS BANNER ====================
+function showStatusBanner(text, color = 'teal') {
+    let banner = document.getElementById('status-banner');
+    if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'status-banner';
+        banner.className = 'fixed top-14 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-lg text-sm font-medium shadow-xl border';
+        document.body.appendChild(banner);
+    }
+    const colors = {
+        teal: 'bg-teal/15 border-teal/30 text-teal',
+        amber: 'bg-amber/15 border-amber/30 text-amber',
+        green: 'bg-success/15 border-success/30 text-success',
+        red: 'bg-danger/15 border-danger/30 text-danger',
+    };
+    banner.className = `fixed top-14 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-lg text-sm font-medium shadow-xl border ${colors[color] || colors.teal}`;
+    banner.textContent = text;
+    banner.classList.remove('hidden');
+}
+
+function hideStatusBanner() {
+    const banner = document.getElementById('status-banner');
+    if (banner) banner.classList.add('hidden');
+}
+
+// ==================== CANVAS CLICK HANDLER ====================
+function handleCanvasClick(e) {
+    const canvas = document.getElementById('annotation-canvas');
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / zoom;
+    const y = (e.clientY - rect.top) / zoom;
+    
+    // Convert to PDF coords (image is 2x render)
+    const pdfX = x / 2;
+    const pdfY = y / 2;
+    
+    if (scaleCalibrating) {
+        scalePoints.push({ x: pdfX, y: pdfY });
+        drawAnnotations();
+        drawMeasureOverlay();
+        // Draw scale calibration points
+        const ctx = canvas.getContext('2d');
+        const cx = x * zoom, cy = y * zoom;
+        ctx.strokeStyle = '#14b8a6';
+        ctx.fillStyle = '#14b8a6';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+        ctx.fill();
+        if (scalePoints.length === 2) {
+            const p1 = scalePoints[0], p2 = scalePoints[1];
+            ctx.beginPath();
+            ctx.moveTo(p1.x * 2 * zoom, p1.y * 2 * zoom);
+            ctx.lineTo(p2.x * 2 * zoom, p2.y * 2 * zoom);
+            ctx.stroke();
+            showStatusBanner('Two points selected. Enter distance (mm) and click Apply Scale.', 'teal');
+            // Re-open the scale dropdown
+            document.getElementById('setscale-dropdown').classList.remove('hidden');
+        }
+        return;
+    }
+    
+    if (measureMode === 'point') {
+        measurePoints.push({ x: pdfX, y: pdfY });
+        drawAnnotations();
+        drawMeasureOverlay();
+    } else if (measureMode === 'line') {
+        if (measurePoints.length >= 2) measurePoints = [];
+        measurePoints.push({ x: pdfX, y: pdfY });
+        drawAnnotations();
+        drawMeasureOverlay();
+    } else if (measureMode === 'area') {
+        measurePoints.push({ x: pdfX, y: pdfY });
+        drawAnnotations();
+        drawMeasureOverlay();
+    } else if (markupMode) {
+        // Draw a markup rectangle - first click sets start, second sets end
+        if (!markupShapeStart) {
+            markupShapeStart = { x: pdfX, y: pdfY };
+        } else {
+            markupShapes.push({
+                type: 'rect',
+                x: Math.min(markupShapeStart.x, pdfX),
+                y: Math.min(markupShapeStart.y, pdfY),
+                w: Math.abs(pdfX - markupShapeStart.x),
+                h: Math.abs(pdfY - markupShapeStart.y),
+                color: '#14b8a6'
+            });
+            markupShapeStart = null;
+            drawAnnotations();
+            drawMarkupOverlay();
+        }
+    }
+}
+
+let markupShapeStart = null;
+
+// ==================== REGROUP ====================
+function regroupData() {
+    // Toggle grouping: by section vs flat list
+    const tbody = document.getElementById('data-tbody');
+    const sectionHeaders = tbody.querySelectorAll('tr td[colspan="7"]');
+    if (sectionHeaders.length > 0) {
+        // Remove section headers - flat view
+        sectionHeaders.forEach(tr => tr.parentElement.remove());
+        showStatusBanner('Ungrouped view', 'teal');
+    } else {
+        // Rebuild with groups
+        if (jobResults) {
+            const pageResult = jobResults.results.find(r => r.page === currentPage);
+            if (pageResult) buildDataTable(pageResult);
+            showStatusBanner('Grouped view', 'teal');
+        }
+    }
+    setTimeout(() => hideStatusBanner(), 2000);
+}
+
+// ==================== CLOSE DROPDOWNS ON OUTSIDE CLICK ====================
+document.addEventListener('click', (e) => {
+    const measureDd = document.getElementById('measure-dropdown');
+    const measureBtn = document.getElementById('measure-btn');
+    if (measureDd && !measureDd.classList.contains('hidden') && !measureDd.contains(e.target) && !measureBtn.contains(e.target)) {
+        measureDd.classList.add('hidden');
+    }
+    const scaleDd = document.getElementById('setscale-dropdown');
+    const scaleBtn = document.getElementById('setscale-btn');
+    if (scaleDd && !scaleDd.classList.contains('hidden') && !scaleDd.contains(e.target) && !scaleBtn.contains(e.target)) {
+        scaleDd.classList.add('hidden');
+    }
+});
+
+// ==================== INIT ====================
+document.getElementById('file-input').addEventListener('change', handleFileSelect);
+
+// Attach canvas click handler (after DOM is ready)
+setTimeout(() => {
+    const canvas = document.getElementById('annotation-canvas');
+    if (canvas) {
+        canvas.addEventListener('click', handleCanvasClick);
+    }
+}, 100);
+
+// Close sheets dropdown on outside click
+document.addEventListener('click', (e) => {
+    const dd = document.getElementById('sheets-dropdown');
+    const btn = document.getElementById('sheets-btn');
+    if (dd && !dd.classList.contains('hidden') && !dd.contains(e.target) && !btn.contains(e.target)) {
+        closeSheetsDropdown();
+    }
+});
+</script>
+
+<!-- ==================== 3D VIEWER MODULE ==================== -->
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+
+let viewer3D = null;
+let webIfcReady = null;
+
+// Dynamically load the web-ifc IIFE script and initialize the WASM module
+function ensureWebIFC() {
+    if (webIfcReady) return webIfcReady;
+    webIfcReady = new Promise(async (resolve, reject) => {
+        try {
+            // Load IIFE script that creates global WebIFC
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/web-ifc@0.0.57/web-ifc-api-iife.js';
+            script.onload = async () => {
+                try {
+                    const ifcApi = new WebIFC.IfcAPI();
+                    ifcApi.SetWasmPath('https://cdn.jsdelivr.net/npm/web-ifc@0.0.57/web-ifc.wasm.wasm', true);
+                    await ifcApi.Init();
+                    resolve(ifcApi);
+                } catch (err) {
+                    reject(err);
+                }
+            };
+            script.onerror = () => reject(new Error('Failed to load web-ifc script'));
+            document.head.appendChild(script);
+        } catch (err) {
+            reject(err);
+        }
+    });
+    return webIfcReady;
+}
+
+window.initViewer3D = function() {
+    if (viewer3D) {
+        viewer3D.resize();
+        return;
+    }
+
+    const container = document.getElementById('three-d-canvas-wrap');
+    if (!container) return;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0b0f);
+
+    const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 10000);
+    camera.position.set(20, 20, 20);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.shadowMap.enabled = false;
+    renderer.domElement.style.display = 'block';
+    renderer.domElement.style.width = '100%';
+    renderer.domElement.style.height = '100%';
+    renderer.domElement.style.pointerEvents = 'auto';
+    container.appendChild(renderer.domElement);
+
+    // Controls
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.rotateSpeed = 0.8;
+    controls.zoomSpeed = 0.9;
+    controls.panSpeed = 0.8;
+
+    // Lights
+    const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+    scene.add(ambient);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(30, 50, 30);
+    scene.add(dirLight);
+    const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.3);
+    dirLight2.position.set(-30, 20, -30);
+    scene.add(dirLight2);
+
+    // Grid helper
+    const gridSize = 40;
+    const gridDivisions = 40;
+    const gridHelper = new THREE.GridHelper(gridSize, gridDivisions, 0x2a2b35, 0x1a1b24);
+    gridHelper.material.opacity = 0.5;
+    gridHelper.material.transparent = true;
+    scene.add(gridHelper);
+
+    // Axes helper
+    const axesHelper = new THREE.AxesHelper(5);
+    scene.add(axesHelper);
+
+    // State
+    let currentModel = null;
+    let gridVisible = true;
+    let axesVisible = true;
+    let wireframeMode = false;
+
+    // Animation loop
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    // Resize handler
+    function onResize() {
+        const w = container.clientWidth;
+        const h = container.clientHeight;
+        if (w === 0 || h === 0) return;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+    }
+    window.addEventListener('resize', onResize);
+    // Also poll for size changes when container becomes visible
+    const resizeObserver = new ResizeObserver(onResize);
+    resizeObserver.observe(container);
+
+    // --- Helper functions ---
+
+    function clearModel() {
+        if (currentModel) {
+            scene.remove(currentModel);
+            currentModel.traverse(obj => {
+                if (obj.geometry) obj.geometry.dispose();
+                if (obj.material) {
+                    if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+                    else obj.material.dispose();
+                }
+            });
+            currentModel = null;
+        }
+    }
+
+    function fitCameraToModel() {
+        if (!currentModel) return;
+        const box = new THREE.Box3().setFromObject(currentModel);
+        if (box.isEmpty()) return;
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const fov = camera.fov * (Math.PI / 180);
+        let distance = maxDim / (2 * Math.tan(fov / 2));
+        distance = Math.max(distance * 1.6, 5);
+        const dir = new THREE.Vector3(1, 0.8, 1).normalize();
+        camera.position.copy(center).add(dir.multiplyScalar(distance));
+        camera.lookAt(center);
+        controls.target.copy(center);
+        controls.update();
+        // Adjust near/far
+        camera.near = distance / 100;
+        camera.far = distance * 1000;
+        camera.updateProjectionMatrix();
+    }
+
+    function applyWireframe(wireframe) {
+        if (!currentModel) return;
+        currentModel.traverse(obj => {
+            if (obj.isMesh && obj.material) {
+                if (Array.isArray(obj.material)) {
+                    obj.material.forEach(m => { m.wireframe = wireframe; });
+                } else {
+                    obj.material.wireframe = wireframe;
+                }
+            }
+        });
+    }
+
+    function showLoading(text) {
+        const el = document.getElementById('three-d-loading');
+        const txt = document.getElementById('three-d-loading-text');
+        if (el) el.classList.remove('hidden');
+        if (txt) txt.textContent = text || 'Loading...';
+    }
+
+    function hideLoading() {
+        const el = document.getElementById('three-d-loading');
+        if (el) el.classList.add('hidden');
+    }
+
+    function showInfo(fileName, format, triCount, meshCount, fileSize) {
+        document.getElementById('three-d-info-name').textContent = fileName;
+        document.getElementById('three-d-info-format').textContent = format;
+        document.getElementById('three-d-info-tris').textContent = triCount.toLocaleString();
+        document.getElementById('three-d-info-meshes').textContent = meshCount.toLocaleString();
+        document.getElementById('three-d-info-size').textContent = fileSize;
+        document.getElementById('three-d-info').classList.remove('hidden');
+    }
+
+    function countTrianglesAndMeshes(root) {
+        let triCount = 0;
+        let meshCount = 0;
+        root.traverse(obj => {
+            if (obj.isMesh) {
+                meshCount++;
+                if (obj.geometry && obj.geometry.index) {
+                    triCount += obj.geometry.index.count / 3;
+                } else if (obj.geometry && obj.geometry.attributes && obj.geometry.attributes.position) {
+                    triCount += obj.geometry.attributes.position.count / 3;
+                }
+            }
+        });
+        return { triCount: Math.round(triCount), meshCount };
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    }
+
+    // --- Public API ---
+
+    viewer3D = {
+        scene, camera, renderer, controls,
+        resize: onResize,
+        loadIFC: async function(file) {
+            showLoading('Initializing IFC engine...');
+            const ifcApi = await ensureWebIFC();
+            showLoading('Parsing IFC model...');
+            const arrayBuffer = await file.arrayBuffer();
+            const data = new Uint8Array(arrayBuffer);
+            const modelID = ifcApi.OpenModel(data);
+            showLoading('Extracting geometry...');
+
+            // Get global coordination matrix
+            const coordMatrix = ifcApi.GetCoordinationMatrix(modelID);
+            const globalMatrix = new THREE.Matrix4();
+            if (coordMatrix) {
+                // coordMatrix is a flat 16-element array or a WASM matrix object
+                let cm;
+                if (Array.isArray(coordMatrix)) {
+                    cm = coordMatrix;
+                } else if (coordMatrix.get) {
+                    cm = [];
+                    for (let r = 0; r < 4; r++)
+                        for (let c = 0; c < 4; c++)
+                        cm.push(coordMatrix.get(r, c));
+                }
+                if (cm) {
+                    globalMatrix.set(
+                        cm[0], cm[1], cm[2], cm[3],
+                        cm[4], cm[5], cm[6], cm[7],
+                        cm[8], cm[9], cm[10], cm[11],
+                        cm[12], cm[13], cm[14], cm[15]
+                    );
+                }
+            }
+
+            const group = new THREE.Group();
+            const ifcMeshes = ifcApi.LoadAllGeometry(modelID);
+
+            for (const flatMesh of ifcMeshes) {
+                for (const placedGeom of flatMesh.geometries) {
+                    const geom = ifcApi.GetGeometry(modelID, placedGeom.geometryExpressID);
+                    if (!geom) continue;
+
+                    const verts = ifcApi.GetVertexArray(geom.GetVertexData(), geom.GetVertexDataSize());
+                    const indices = ifcApi.GetIndexArray(geom.GetIndexData(), geom.GetIndexDataSize());
+
+                    // web-ifc vertex data is interleaved: x, y, z, x, y, z, ...
+                    // GetVertexArray returns a Float32Array, use directly as positions
+                    const bufferGeom = new THREE.BufferGeometry();
+                    bufferGeom.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+                    bufferGeom.setIndex(new THREE.BufferAttribute(indices, 1));
+
+                    // Apply per-element transformation (flatTransformation is 16-element column-major array)
+                    const ft = placedGeom.flatTransformation;
+                    if (ft && ft.length === 16) {
+                        const mat = new THREE.Matrix4();
+                        mat.set(
+                            ft[0], ft[1], ft[2], ft[3],
+                            ft[4], ft[5], ft[6], ft[7],
+                            ft[8], ft[9], ft[10], ft[11],
+                            ft[12], ft[13], ft[14], ft[15]
+                        );
+                        bufferGeom.applyMatrix4(mat);
+                    }
+
+                    // Apply global coordination matrix
+                    bufferGeom.applyMatrix4(globalMatrix);
+
+                    bufferGeom.computeVertexNormals();
+
+                    // Get color from placedGeom
+                    const color = placedGeom.color;
+                    const material = new THREE.MeshStandardMaterial({
+                        color: color ? new THREE.Color(color.x, color.y, color.z) : 0xb0b0b0,
+                        metalness: 0.1,
+                        roughness: 0.8,
+                        flatShading: false,
+                        side: THREE.DoubleSide
+                    });
+
+                    const mesh = new THREE.Mesh(bufferGeom, material);
+                    group.add(mesh);
+
+                    // Clean up WASM geometry object
+                    geom.delete();
+                }
+                flatMesh.delete();
+            }
+
+            clearModel();
+            currentModel = group;
+            scene.add(group);
+
+            // Auto-fit
+            fitCameraToModel();
+
+            const { triCount, meshCount: actualMeshCount } = countTrianglesAndMeshes(group);
+            showInfo(file.name, 'IFC', triCount, actualMeshCount, formatFileSize(file.size));
+            hideLoading();
+            document.getElementById('three-d-empty').style.display = 'none';
+
+            ifcApi.CloseModel(modelID);
+        },
+        loadGLB: async function(file) {
+            showLoading('Loading GLB model...');
+            const loader = new GLTFLoader();
+            const arrayBuffer = await file.arrayBuffer();
+            const result = await loader.parseAsync(arrayBuffer, '');
+            clearModel();
+            currentModel = result.scene || result.scenes[0];
+            scene.add(currentModel);
+            fitCameraToModel();
+            const { triCount, meshCount } = countTrianglesAndMeshes(currentModel);
+            showInfo(file.name, 'GLB', triCount, meshCount, formatFileSize(file.size));
+            hideLoading();
+            document.getElementById('three-d-empty').style.display = 'none';
+        },
+        loadOBJ: async function(file) {
+            showLoading('Loading OBJ model...');
+            const loader = new OBJLoader();
+            const text = await file.text();
+            const obj = loader.parse(text);
+            clearModel();
+            currentModel = obj;
+            // Apply a default material if none exists
+            obj.traverse(child => {
+                if (child.isMesh) {
+                    if (!child.material || (Array.isArray(child.material) && child.material.length === 0)) {
+                        child.material = new THREE.MeshStandardMaterial({
+                            color: 0xb0b0b0, metalness: 0.1, roughness: 0.8
+                        });
+                    }
+                }
+            });
+            scene.add(obj);
+            fitCameraToModel();
+            const { triCount, meshCount } = countTrianglesAndMeshes(obj);
+            showInfo(file.name, 'OBJ', triCount, meshCount, formatFileSize(file.size));
+            hideLoading();
+            document.getElementById('three-d-empty').style.display = 'none';
+        }
+    };
+
+    // --- Global API for toolbar buttons ---
+    window.reset3DView = function() {
+        if (!currentModel) {
+            camera.position.set(20, 20, 20);
+            camera.lookAt(0, 0, 0);
+            controls.target.set(0, 0, 0);
+            controls.update();
+            return;
+        }
+        fitCameraToModel();
+    };
+
+    window.toggle3DGrid = function() {
+        gridVisible = !gridVisible;
+        gridHelper.visible = gridVisible;
+        const btn = document.getElementById('btn-3d-grid');
+        if (gridVisible) btn.classList.add('text-teal'); else btn.classList.remove('text-teal');
+    };
+
+    window.toggle3DAxes = function() {
+        axesVisible = !axesVisible;
+        axesHelper.visible = axesVisible;
+        const btn = document.getElementById('btn-3d-axes');
+        if (axesVisible) btn.classList.add('text-teal'); else btn.classList.remove('text-teal');
+    };
+
+    window.toggle3DWireframe = function() {
+        wireframeMode = !wireframeMode;
+        applyWireframe(wireframeMode);
+        const btn = document.getElementById('btn-3d-wireframe');
+        if (wireframeMode) btn.classList.add('text-teal'); else btn.classList.remove('text-teal');
+    };
+
+    // Set initial active states for grid and axes
+    document.getElementById('btn-3d-grid').classList.add('text-teal');
+    document.getElementById('btn-3d-axes').classList.add('text-teal');
+};
+
+window.load3DFile = function(file) {
+    if (!file) return;
+    window.initViewer3D();
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (ext === 'ifc') {
+        viewer3D.loadIFC(file).catch(err => {
+            console.error('IFC load error:', err);
+            const el = document.getElementById('three-d-loading');
+            if (el) el.classList.add('hidden');
+            alert('Failed to load IFC file: ' + err.message);
+        });
+    } else if (ext === 'glb' || ext === 'gltf') {
+        viewer3D.loadGLB(file).catch(err => {
+            console.error('GLB load error:', err);
+            const el = document.getElementById('three-d-loading');
+            if (el) el.classList.add('hidden');
+            alert('Failed to load GLB/GLTF file: ' + err.message);
+        });
+    } else if (ext === 'obj') {
+        viewer3D.loadOBJ(file).catch(err => {
+            console.error('OBJ load error:', err);
+            const el = document.getElementById('three-d-loading');
+            if (el) el.classList.add('hidden');
+            alert('Failed to load OBJ file: ' + err.message);
+        });
+    } else {
+        alert('Unsupported file format: .' + ext + '\nSupported: .ifc, .glb, .gltf, .obj');
+    }
+};
 </script>
 </body>
 </html>

@@ -202,7 +202,7 @@
       "FI": {"regex": "FI[- ]?\\d+", "type": "flow_indicator", "unit": "No"},
       "LI": {"regex": "LI[- ]?\\d+", "type": "level_indicator", "unit": "No"},
       "PSV": {"regex": "PSV[- ]?\\d+", "type": "pressure_safety_valve", "unit": "No"},
-      "LINE": {"regex": "\\d{1,2}[\"- ]\\d{1,3}[\"- ][A-Z]{2,4}-\\d+", "type": "pipe_line", "unit": "RMT"}
+      "LINE": {"regex": "\\d{1,2}[\"\\- ]\\d{1,3}[\"\\- ][A-Z]{2,4}-\\d+", "type": "pipe_line", "unit": "RMT"}
     },
     "dimension_patterns": {
       "line_number": "(\\d{1,2})[\"- ](\\d{1,3})[\"- ]([A-Z]{2,4})[- ](\\d+)",

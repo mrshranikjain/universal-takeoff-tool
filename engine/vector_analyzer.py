@@ -9,11 +9,15 @@ class VectorAnalyzer:
         self.drawings = page.get_drawings()
     
     def analyze(self):
-        """Classify all drawing paths by color layer."""
+        """Classify all drawing paths by color layer with line filtering."""
         layer_stats = defaultdict(lambda: {
             "paths": 0, "lines": 0, "filled": 0,
-            "line_length_pts": 0, "filled_symbols": []
+            "line_length_pts": 0, "filled_symbols": [],
+            "long_lines": 0, "long_line_length_pts": 0,  # lines > 10pts (real runs)
+            "short_lines": 0, "short_line_length_pts": 0,  # lines < 10pts (fragments)
         })
+        
+        MIN_LINE_LENGTH = 10.0  # pts — below this is a fragment, not a real run
         
         for d in self.drawings:
             color = d.get("color")
@@ -35,6 +39,14 @@ class VectorAnalyzer:
                     p1, p2 = item[1], item[2]
                     length_pts = ((p2.x - p1.x)**2 + (p2.y - p1.y)**2)**0.5
                     layer_stats[layer_name]["line_length_pts"] += length_pts
+                    
+                    # Separate real runs from fragments
+                    if length_pts >= MIN_LINE_LENGTH:
+                        layer_stats[layer_name]["long_lines"] += 1
+                        layer_stats[layer_name]["long_line_length_pts"] += length_pts
+                    else:
+                        layer_stats[layer_name]["short_lines"] += 1
+                        layer_stats[layer_name]["short_line_length_pts"] += length_pts
         
         return dict(layer_stats)
     
